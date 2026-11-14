@@ -5,7 +5,7 @@
 <h1 align="center">Al-Qur'an</h1>
 
 <p align="center">
-  A serene, offline-first Quran and Islamic companion application built with Flutter — featuring dual-script Mushaf reading (Madinah & Kemenag), Ayah-by-Ayah translation and audio playback, 4-color categorization bookmarks, customizable light/dark themes, collaborative group reading challenges via Firebase, accurate prayer times with Adhan notifications, and interactive Home Screen Widgets for Android and iOS.
+  A serene, offline-first Quran and Islamic companion application built with Flutter — featuring dashboard-first navigation, immersive distraction-free reading, dual-script Mushaf reading (Madinah & Kemenag), Ayah-by-Ayah translation and audio playback with a translation toggle, informative 4-color bookmarks, customizable light/dark themes, collaborative group reading challenges via Firebase, accurate prayer times with Adhan notifications, and interactive Home Screen Widgets for Android and iOS.
 </p>
 
 <p align="center">
@@ -24,12 +24,13 @@
 
 - [Screenshots](#screenshots)
 - [Core Features](#core-features)
-  - [Ayah-by-Ayah Reader](#1-ayah-by-ayah-reader)
-  - [Page-by-Page Mushaf](#2-page-by-page-mushaf-604-pages)
-  - [Color-Coded Bookmarks](#3-color-coded-bookmarks)
-  - [Dark & Light Theme](#4-dark--light-theme)
-  - [Firebase Reading Challenges & Collaboration](#5-firebase-reading-challenges--collaboration)
-  - [Prayer Times, Adhan Notifications & Home Widgets](#6-prayer-times-adhan-notifications--home-widgets)
+  - [Dashboard & Immersive Reading](#1-dashboard--immersive-reading)
+  - [Ayah-by-Ayah Reader](#2-ayah-by-ayah-reader)
+  - [Page-by-Page Mushaf](#3-page-by-page-mushaf-604-pages)
+  - [Informative Color-Coded Bookmarks](#4-informative-color-coded-bookmarks)
+  - [Dark & Light Theme](#5-dark--light-theme)
+  - [Firebase Reading Challenges & Collaboration](#6-firebase-reading-challenges--collaboration)
+  - [Prayer Times, Adhan Notifications & Home Widgets](#7-prayer-times-adhan-notifications--home-widgets)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Platform Configuration (Android & iOS)](#platform-configuration-android--ios)
@@ -82,40 +83,49 @@
 
 ## Core Features
 
-### 1. Ayah-by-Ayah Reader
-- **Bilingual Display**: Arabic text alongside Indonesian translation for every verse.
-- **Audio Recitation**: Per-ayah streaming murottal audio powered by `just_audio`.
-- **Customizable Typography**: Real-time adjustable Arabic font size slider (persisted locally).
-- **Fast Navigation**: Jump straight to any surah or verse with smooth animated scrolling (`scrollable_positioned_list`).
-- **Quick Action Bar**: Instantly bookmark, copy, or play audio for any individual ayah.
+### 1. Dashboard & Immersive Reading
+- **Dashboard-First Workflow**: The **Beranda** tab shows a continue-reading card with Qur'an completion percentage, two primary reading modes (Baca per Ayat and Mushaf), and shortcuts to prayer times, group challenges and bookmarks. Settings is reachable from the dashboard app bar.
+- **Clean Five-Tab Navigation**: Beranda, Surah, Mushaf, Shalat and Penanda — fewer tabs and no duplicated settings destination.
+- **Landscape Layout**: In landscape the bottom bar is replaced by a slim `NavigationRail`, freeing vertical space for reading.
+- **Immersive Reader Mode**: Toggle from the reader app bar, or rotate to landscape to activate it automatically. The app bar and mushaf footer disappear; a floating control restores them and the mushaf keeps a compact page badge with previous/next buttons.
+- **Reading Preferences**: Arabic text size and translation visibility are persisted settings. The font slider scales both the ayah list and the page-by-page mushaf.
 
-### 2. Page-by-Page Mushaf (604 Pages)
+### 2. Ayah-by-Ayah Reader
+- **Bilingual Display**: Arabic text alongside Indonesian translation for every verse, with a one-tap app-bar toggle to hide the translation and read clean Arabic only.
+- **Audio Recitation**: Per-ayah streaming murottal audio powered by `just_audio`.
+- **Customizable Typography**: Real-time adjustable Arabic font size slider, persisted locally and also applied to mushaf pages.
+- **Fast Navigation**: Jump straight to any surah or verse with smooth animated scrolling (`scrollable_positioned_list`).
+- **Quick Action Bar**: Instantly bookmark or play audio for any individual ayah.
+
+### 3. Page-by-Page Mushaf (604 Pages)
 - **Authentic Dual Layouts**:
   - **Madinah Mushaf**: Classic Uthmani script based on King Fahd Complex standards.
   - **Kemenag Mushaf**: Standard Indonesian layout (Mushaf Standar Indonesia) verified by the Ministry of Religious Affairs (Kemenag).
 - **Faithful Page Layouts**: Exactly 604 pages rendered via high-performance horizontal paging (`PageView`), complete with juz markers, surah heading banners, basmalah calligraphies, and Arabic page numbering.
+- **Immersive Landscape Paging**: In landscape the reader hides its chrome and shows a floating page badge with previous/next controls.
 - **Offline Asset Index**: Pre-indexed surah and ayah page boundaries bundled in JSON format for instantaneous, offline page resolution.
 
-### 3. Color-Coded Bookmarks
+### 4. Informative Color-Coded Bookmarks
 - **Four Categorization Colors**: Mark verses with **Red, Green, Yellow, or Blue** tags to categorize recitations (e.g., daily target, memorization, reflection, favorite verses).
-- **Interactive Management**: Filter bookmarks by color tag, sort by recency, or swipe to delete with an instant "Undo" snackbar.
-- **Direct Jump & Highlight**: Tapping a bookmark directly launches the surah, auto-scrolls to the exact ayah, and triggers a brief visual highlight.
-- **Local Persistence**: Backed by high-speed Hive key-value storage with custom zero-boilerplate binary adapters.
+- **Informative Cards**: Every card shows the surah name and ayah number (e.g. "Surah Al-Baqarah - Ayat 255"), the color tag, a two-line Arabic snippet with its translation, and the date/time it was saved.
+- **Jump & Delete**: Tap a card to jump straight to the exact ayah, or use the delete button on the card (swipe-to-delete with Undo is also supported).
+- **Filtering**: Filter by color tag; counts per color are shown in the filter bar.
+- **Resilient Local Storage**: Backed by Hive with a custom binary adapter. Missing fields are repaired with readable fallbacks and unreadable records are skipped so a damaged entry can never crash the list.
 
-### 4. Dark & Light Theme
+### 5. Dark & Light Theme
 - **Three Modes**: **Light (Terang)**, **Dark (Gelap)**, and **System (Sistem)** matching the device theme.
 - **Quick Toggle**: One-tap toggle button in the main app bar and detailed preference controls in Settings.
 - **Dedicated Mushaf Palettes**: Specially tuned warm parchment color scheme for daytime readability and deep OLED contrast tones for comfortable night reading.
 
-### 5. Firebase Reading Challenges & Collaboration
-- **Frictionless Auth**: Start instantly with Anonymous sign-in, sign in with Google, or create an account via Email & Password.
+### 6. Firebase Reading Challenges & Collaboration
+- **Frictionless Auth**: Start instantly with Anonymous sign-in, sign in with Google, or create an account via Email & Password. Dismissing the Google account chooser is treated as a normal cancellation, an existing Google session is reused silently, and a rejected credential clears the cached Google session before the next attempt.
 - **Reading Groups (Khatam Together)**:
   - Create groups with auto-generated, collision-free 6-character invite codes (ambiguous characters like `0`, `O`, `1`, `I` excluded).
   - Join via invite code with real-time membership validation in Firestore transactions.
 - **Live Leaderboard**: Real-time Firestore stream tracks each member's furthest read verse out of 6,236 verses, displaying progress percentage, current surah/ayah, and rank.
 - **Debounced Sync**: Automatically stores progress locally on page turns and synchronizes to the cloud with a 2-second debounce to minimize battery and network usage.
 
-### 6. Prayer Times, Adhan Notifications & Home Widgets
+### 7. Prayer Times, Adhan Notifications & Home Widgets
 - **Astronomical Calculation Engine**: Integrated with `adhan` calculation library using the official Indonesian Ministry of Religious Affairs (Kemenag) method (Fajr 20°, Isha 18°).
 - **Location Modes**:
   - **GPS Auto-Detection**: Real-time geolocation using `geolocator`.
@@ -170,9 +180,9 @@ lib/
 │   ├── models/                # API DTOs, Hive binary adapters, Firestore entity models
 │   └── repositories/          # Repository implementations with cache-first strategy
 └── presentation/
-    ├── pages/                 # Home shell, Surah list, Reader, Mushaf, Challenges, Prayer, Settings
+    ├── pages/                 # Dashboard, home shell, Surah list, readers, Challenges, Prayer, Settings
     ├── providers/             # Riverpod providers, Notifiers, and state controllers
-    └── widgets/               # Ayah tile, Mushaf page, Prayer countdown card, Bookmark color sheet
+    └── widgets/               # Ayah tile, Mushaf page, immersive reader, Prayer countdown card, Bookmark sheet
 ```
 
 ---
@@ -391,11 +401,14 @@ flutter test
 ```
 
 ### Test Suite Highlights
-- `test/bookmark_model_test.dart`: Entity mapping, `copyWith`, and `BookmarkColor` unit tests.
+- `test/bookmark_model_test.dart`: Entity mapping, `copyWith`, repaired missing-field fallbacks, informative titles, and `BookmarkColor` unit tests.
 - `test/bookmark_storage_test.dart`: Hive CRUD operations, sorting, and lifecycle.
+- `test/bookmarks_page_test.dart`: Bookmark screen empty state, card content, repaired entries, and delete action widget tests.
 - `test/prayer_times_test.dart`: Solar calculation assertions, timezone formatting (WIB/WITA/WIT), and midnight countdown handling.
 - `test/challenge_progress_test.dart`: 6,236-ayah cumulative math, progress ratio clamping, and invite code validation.
 - `test/mushaf_page_index_test.dart`: 604-page boundary parsing and range resolution.
+- `test/mushaf_asset_test.dart`: Bundled mushaf index asset sanity checks.
+- `test/settings_storage_test.dart`: Persisted reading and theme preferences.
 - `test/theme_switcher_test.dart`: Reactive theme switching and persistence.
 - `test/widget_test.dart`: Mushaf page rendering and navigation widget test.
 
