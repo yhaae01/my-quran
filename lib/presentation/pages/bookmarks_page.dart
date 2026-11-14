@@ -255,9 +255,12 @@ class _BookmarkCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final style = ref.watch(
       settingsProvider.select((settings) => settings.mushafStyle),
     );
+    final arabic = bookmark.arabicSnippet;
+    final translation = bookmark.translation.trim();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -268,133 +271,177 @@ class _BookmarkCard extends ConsumerWidget {
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 24),
           decoration: BoxDecoration(
-            color: theme.colorScheme.errorContainer,
+            color: scheme.errorContainer,
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Icon(
-            Icons.delete_outline,
-            color: theme.colorScheme.onErrorContainer,
-          ),
+          child: Icon(Icons.delete_outline, color: scheme.onErrorContainer),
         ),
-        onDismissed: (_) async {
-          await ref.read(bookmarksProvider.notifier).remove(bookmark.id);
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Penanda ${bookmark.reference} dihapus.'),
-              action: SnackBarAction(
-                label: 'Urungkan',
-                onPressed: () {
-                  ref.read(bookmarksProvider.notifier).save(bookmark);
-                },
-              ),
-            ),
-          );
-        },
+        onDismissed: (_) => _remove(context, ref),
         child: Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => SurahReaderPage(
-                    surahNumber: bookmark.surahNumber,
-                    initialSurahName: bookmark.surahName,
-                    initialVerseNumber: bookmark.verseNumber,
-                  ),
-                ),
-              );
-            },
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(width: 6, color: bookmark.color.color),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                bookmark.surahName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
+            onTap: () => _openReader(context),
+            // IntrinsicHeight bounds the stretch-aligned color strip, which
+            // would otherwise receive an infinite height inside a ListView.
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(width: 6, color: bookmark.color.color),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 6, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  bookmark.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            _ColorTag(color: bookmark.color),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Surah ${bookmark.surahNumber} • '
-                                'Ayat ${bookmark.verseNumber}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                              IconButton(
+                                tooltip: 'Hapus penanda',
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => _remove(context, ref),
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  size: 20,
+                                  color: scheme.onSurfaceVariant,
                                 ),
                               ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Row(
+                              children: [
+                                _ColorTag(color: bookmark.color),
+                                const Spacer(),
+                                Icon(
+                                  Icons.schedule,
+                                  size: 13,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    bookmark.hasTimestamp
+                                        ? formatDateTimeLabel(
+                                            bookmark.timestamp,
+                                          )
+                                        : 'Tanggal tidak tercatat',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.schedule,
-                              size: 13,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 4),
+                          ),
+                          const SizedBox(height: 10),
+                          if (arabic.isNotEmpty)
                             Text(
-                              formatDateTimeLabel(bookmark.timestamp),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                              arabic,
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: style.fontFamily,
+                                fontSize: 23,
+                                height: 1.7,
+                                color: scheme.onSurface,
+                              ),
+                            )
+                          else
+                            Text(
+                              'Teks Arab tidak tersedia.',
+                              textAlign: TextAlign.right,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          if (translation.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Text(
+                                translation,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  height: 1.45,
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          bookmark.arabicText,
-                          textAlign: TextAlign.right,
-                          textDirection: TextDirection.rtl,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: style.fontFamily,
-                            fontSize: 23,
-                            height: 1.7,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        if (bookmark.translation.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            bookmark.translation,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              height: 1.45,
-                            ),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  void _openReader(BuildContext context) {
+    if (!bookmark.isNavigable) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Penanda ini tidak memiliki nomor surah/ayat yang valid.',
+            ),
+          ),
+        );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SurahReaderPage(
+          surahNumber: bookmark.surahNumber,
+          initialSurahName: bookmark.displaySurahName,
+          initialVerseNumber: bookmark.verseNumber,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _remove(BuildContext context, WidgetRef ref) async {
+    // Capture the messenger before the card is removed from the tree so the
+    // undo snackbar is still shown after the provider reloads.
+    final messenger = ScaffoldMessenger.of(context);
+    await ref.read(bookmarksProvider.notifier).remove(bookmark.id);
+    if (!messenger.mounted) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Penanda ${bookmark.reference} dihapus.'),
+          action: SnackBarAction(
+            label: 'Urungkan',
+            onPressed: () {
+              ref.read(bookmarksProvider.notifier).save(bookmark);
+            },
+          ),
+        ),
+      );
   }
 }

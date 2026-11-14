@@ -79,5 +79,26 @@ void main() {
       expect(BookmarkColor.yellow.label, 'Kuning');
       expect(BookmarkColor.blue.label, 'Biru');
     });
+
+    test('repairs a stored bookmark with missing fields', () {
+      const incomplete = BookmarkModel(id: 'broken', surahNumber: 2);
+
+      final entity = incomplete.toEntity();
+
+      expect(entity.surahName, 'Surah 2');
+      expect(entity.arabicText, '');
+      expect(entity.translation, '');
+      expect(entity.color, BookmarkColor.green);
+      expect(entity.hasTimestamp, isFalse);
+      expect(entity.isNavigable, isFalse);
+      expect(entity.title, 'Surah 2 - Ayat 0');
+    });
+
+    test('exposes informative title and navigation state', () {
+      expect(sampleBookmark.title, 'Surah Al-Fatihah - Ayat 1');
+      expect(sampleBookmark.isNavigable, isTrue);
+      expect(sampleBookmark.hasTimestamp, isTrue);
+      expect(sampleBookmark.arabicSnippet, sampleBookmark.arabicText);
+    });
   });
 }

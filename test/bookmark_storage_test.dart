@@ -79,6 +79,7 @@ void main() {
       timestamp: DateTime(2026, 2, 1),
     );
 
+    await box.clear();
     await repository.saveBookmark(older);
     await repository.saveBookmark(newer);
     final saved = await repository.getBookmarks();

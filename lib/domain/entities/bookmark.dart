@@ -40,7 +40,29 @@ class Bookmark {
   final BookmarkColor color;
   final DateTime timestamp;
 
-  String get reference => '$surahName • Ayat $verseNumber';
+  String get reference => '$displaySurahName • Ayat $verseNumber';
+
+  /// Card title, e.g. "Surah Al-Baqarah - Ayat 255". The fallback name
+  /// already starts with "Surah", so it is not prefixed twice.
+  String get title {
+    final name = displaySurahName;
+    final label = name.startsWith('Surah ') ? name : 'Surah $name';
+    return '$label - Ayat $verseNumber';
+  }
+
+  String get displaySurahName {
+    final name = surahName.trim();
+    if (name.isNotEmpty) return name;
+    return surahNumber > 0 ? 'Surah $surahNumber' : 'Surah tidak dikenal';
+  }
+
+  /// A bookmark without a valid surah/ayah cannot be opened in the reader.
+  bool get isNavigable => surahNumber > 0 && verseNumber > 0;
+
+  /// Stored timestamps of repaired entries fall back to the Unix epoch.
+  bool get hasTimestamp => timestamp.millisecondsSinceEpoch > 0;
+
+  String get arabicSnippet => arabicText.trim();
 
   Bookmark copyWith({
     String? id,

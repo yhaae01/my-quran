@@ -4,26 +4,30 @@ import '../../domain/entities/bookmark.dart';
 
 /// Hive representation of a bookmark. Kept separate from the domain entity so
 /// storage details never leak into the rest of the app.
+///
+/// Every field except the id is nullable: entries written by older builds (or
+/// partially corrupted boxes) must not crash the bookmark screen. [toEntity]
+/// repairs missing values with readable fallbacks.
 class BookmarkModel {
   const BookmarkModel({
     required this.id,
-    required this.surahName,
-    required this.surahNumber,
-    required this.verseNumber,
-    required this.arabicText,
-    required this.translation,
-    required this.color,
-    required this.timestamp,
+    this.surahName,
+    this.surahNumber,
+    this.verseNumber,
+    this.arabicText,
+    this.translation,
+    this.color,
+    this.timestamp,
   });
 
   final String id;
-  final String surahName;
-  final int surahNumber;
-  final int verseNumber;
-  final String arabicText;
-  final String translation;
-  final BookmarkColor color;
-  final DateTime timestamp;
+  final String? surahName;
+  final int? surahNumber;
+  final int? verseNumber;
+  final String? arabicText;
+  final String? translation;
+  final BookmarkColor? color;
+  final DateTime? timestamp;
 
   factory BookmarkModel.fromEntity(Bookmark bookmark) {
     return BookmarkModel(
@@ -39,15 +43,25 @@ class BookmarkModel {
   }
 
   Bookmark toEntity() {
+    final surah = surahNumber ?? 0;
+    final verse = verseNumber ?? 0;
+    final storedName = surahName?.trim() ?? '';
+    final savedAt = timestamp ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final storedId = id.trim();
+
     return Bookmark(
-      id: id,
-      surahName: surahName,
-      surahNumber: surahNumber,
-      verseNumber: verseNumber,
-      arabicText: arabicText,
-      translation: translation,
-      color: color,
-      timestamp: timestamp,
+      id: storedId.isEmpty
+          ? '${surah}_${verse}_${savedAt.millisecondsSinceEpoch}'
+          : storedId,
+      surahName: storedName.isNotEmpty
+          ? storedName
+          : (surah > 0 ? 'Surah $surah' : 'Surah tidak dikenal'),
+      surahNumber: surah,
+      verseNumber: verse,
+      arabicText: arabicText ?? '',
+      translation: translation ?? '',
+      color: color ?? BookmarkColor.green,
+      timestamp: savedAt,
     );
   }
 }
@@ -82,12 +96,15 @@ class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
     writer
       ..writeByte(1)
       ..writeString(obj.id)
-      ..writeString(obj.surahName)
-      ..writeInt(obj.surahNumber)
-      ..writeInt(obj.verseNumber)
-      ..writeString(obj.arabicText)
-      ..writeString(obj.translation)
-      ..writeString(obj.color.name)
-      ..writeInt(obj.timestamp.millisecondsSinceEpoch);
+      ..writeString(obj.surahName ?? '')
+      ..writeInt(obj.surahNumber ?? 0)
+      ..writeInt(obj.verseNumber ?? 0)
+      ..writeString(obj.arabicText ?? '')
+      ..writeString(obj.translation ?? '')
+      ..writeString((obj.color ?? BookmarkColor.green).name)
+      ..writeInt(
+        (obj.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .millisecondsSinceEpoch,
+      );
   }
 }
