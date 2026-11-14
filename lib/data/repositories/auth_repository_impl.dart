@@ -109,6 +109,8 @@ class AuthRepositoryImpl implements AuthRepository {
         'Tidak ada koneksi internet. Coba lagi nanti.',
       'operation-not-allowed' =>
         'Metode masuk ini belum diaktifkan di Firebase Console.',
+      'admin-restricted-operation' =>
+        'Masuk sebagai tamu belum diaktifkan. Aktifkan Anonymous di Firebase Console → Authentication → Sign-in method.',
       'too-many-requests' =>
         'Terlalu banyak percobaan. Coba lagi beberapa saat lagi.',
       _ => error.message ?? 'Gagal masuk. Coba lagi.',
