@@ -11,6 +11,7 @@ import '../../data/datasources/adhan_prayer_times_data_source.dart';
 import '../../data/datasources/challenge_remote_data_source.dart';
 import '../../data/datasources/device_location_data_source.dart';
 import '../../data/datasources/firebase_auth_data_source.dart';
+import '../../data/datasources/google_auth_data_source.dart';
 import '../../data/datasources/prayer_notification_data_source.dart';
 import '../../data/datasources/prayer_widget_data_source.dart';
 import '../../data/datasources/quran_local_data_source.dart';
@@ -76,10 +77,14 @@ final Provider<FirebaseAuth> firebaseAuthProvider = Provider<FirebaseAuth>(
 final Provider<FirebaseFirestore> firestoreProvider =
     Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
+final Provider<GoogleAuthDataSource> googleAuthDataSourceProvider =
+    Provider<GoogleAuthDataSource>((ref) => GoogleAuthDataSource());
+
 final Provider<AuthRepository> authRepositoryProvider =
     Provider<AuthRepository>(
       (ref) => AuthRepositoryImpl(
         FirebaseAuthDataSource(ref.watch(firebaseAuthProvider)),
+        ref.watch(googleAuthDataSourceProvider),
       ),
     );
 
@@ -244,6 +249,11 @@ final Provider<WatchAuthState> watchAuthStateProvider =
 final Provider<SignInAnonymously> signInAnonymouslyProvider =
     Provider<SignInAnonymously>(
       (ref) => SignInAnonymously(ref.watch(authRepositoryProvider)),
+    );
+
+final Provider<SignInWithGoogle> signInWithGoogleProvider =
+    Provider<SignInWithGoogle>(
+      (ref) => SignInWithGoogle(ref.watch(authRepositoryProvider)),
     );
 
 final Provider<SignInWithEmail> signInWithEmailProvider =

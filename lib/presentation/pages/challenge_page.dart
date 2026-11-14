@@ -531,6 +531,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
   bool _emailMode = false;
   bool _register = false;
   bool _busy = false;
+  bool _googleBusy = false;
 
   @override
   void dispose() {
@@ -569,7 +570,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
         ),
         const SizedBox(height: 28),
         FilledButton.icon(
-          onPressed: _busy ? null : _signInAnonymously,
+          onPressed: _busy || _googleBusy ? null : _signInAnonymously,
           icon: _busy && !_emailMode
               ? const SizedBox(
                   width: 18,
@@ -586,6 +587,18 @@ class _SignInViewState extends ConsumerState<_SignInView> {
           style: theme.textTheme.bodySmall?.copyWith(
             color: scheme.onSurfaceVariant,
           ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _busy || _googleBusy ? null : _signInWithGoogle,
+          icon: _googleBusy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.g_mobiledata),
+          label: const Text('Masuk dengan Google'),
         ),
         const SizedBox(height: 22),
         Row(
@@ -606,7 +619,9 @@ class _SignInViewState extends ConsumerState<_SignInView> {
         const SizedBox(height: 18),
         if (!_emailMode)
           OutlinedButton.icon(
-            onPressed: _busy ? null : () => setState(() => _emailMode = true),
+            onPressed: _busy || _googleBusy
+                ? null
+                : () => setState(() => _emailMode = true),
             icon: const Icon(Icons.alternate_email),
             label: const Text('Masuk dengan email'),
           )
@@ -652,7 +667,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                   ),
                   const SizedBox(height: 16),
                   FilledButton(
-                    onPressed: _busy ? null : _submitEmail,
+                    onPressed: _busy || _googleBusy ? null : _submitEmail,
                     child: _busy
                         ? const SizedBox(
                             width: 18,
@@ -662,7 +677,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                         : Text(_register ? 'Daftar' : 'Masuk'),
                   ),
                   TextButton(
-                    onPressed: _busy
+                    onPressed: _busy || _googleBusy
                         ? null
                         : () => setState(() {
                             _register = !_register;
@@ -690,6 +705,17 @@ class _SignInViewState extends ConsumerState<_SignInView> {
       _showError(error);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _googleBusy = true);
+    try {
+      await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    } catch (error) {
+      _showError(error);
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
     }
   }
 

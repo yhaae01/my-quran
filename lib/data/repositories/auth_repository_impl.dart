@@ -1,14 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/error/failure.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/firebase_auth_data_source.dart';
+import '../datasources/google_auth_data_source.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl(this._auth);
+  AuthRepositoryImpl(this._auth, this._google);
 
   final FirebaseAuthDataSource _auth;
+  final GoogleAuthDataSource _google;
 
   @override
   AppUser? get currentUser => _toUser(_auth.currentUser);
@@ -21,6 +25,17 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<AppUser> signInAnonymously() {
     return _guard(() async => _toUser(await _auth.signInAnonymously())!);
+  }
+
+  @override
+  Future<AppUser> signInWithGoogle() {
+    return _guard(() async {
+      if (kIsWeb) {
+        return _toUser(await _auth.signInWithGooglePopup())!;
+      }
+      final idToken = await _google.signIn();
+      return _toUser(await _auth.signInWithGoogle(idToken))!;
+    });
   }
 
   @override
@@ -62,7 +77,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signOut() => _auth.signOut();
+  Future<void> signOut() async {
+    await _auth.signOut();
+    try {
+      await _google.signOut();
+    } catch (_) {
+      // The Firebase session is already cleared, so a Google SDK hiccup here
+      // must not block signing out.
+    }
+  }
 
   AppUser? _toUser(User? user) {
     if (user == null) return null;
@@ -87,6 +110,13 @@ class AuthRepositoryImpl implements AuthRepository {
       rethrow;
     } on FirebaseAuthException catch (error) {
       throw Failure(_messageFor(error), cause: error);
+    } on GoogleSignInException catch (error) {
+      throw Failure(_googleMessageFor(error), cause: error);
+    } on UnsupportedError catch (error) {
+      throw Failure(
+        'Masuk dengan Google belum tersedia di platform ini.',
+        cause: error,
+      );
     } catch (error) {
       throw Failure(
         'Tidak dapat menghubungi server. Periksa koneksi internet Anda.',
@@ -109,12 +139,28 @@ class AuthRepositoryImpl implements AuthRepository {
         'Tidak ada koneksi internet. Coba lagi nanti.',
       'operation-not-allowed' =>
         'Metode masuk ini belum diaktifkan di Firebase Console.',
-      'admin-restricted-operation' =>
-        'Masuk sebagai tamu belum diaktifkan. Aktifkan Anonymous di Firebase Console → Authentication → Sign-in method.',
+      'admin-restricted-operation' => 'Masuk sebagai tamu belum diaktifkan. Aktifkan Anonymous di Firebase Console → Authentication → Sign-in method.',
+      'account-exists-with-different-credential' =>
+        'Email ini sudah terdaftar dengan metode masuk lain.',
       'too-many-requests' =>
         'Terlalu banyak percobaan. Coba lagi beberapa saat lagi.',
       _ => error.message ?? 'Gagal masuk. Coba lagi.',
     };
     return message;
+  }
+
+  String _googleMessageFor(GoogleSignInException error) {
+    return switch (error.code) {
+      GoogleSignInExceptionCode.canceled => 'Masuk dengan Google dibatalkan.',
+      GoogleSignInExceptionCode.interrupted =>
+        'Masuk dengan Google terganggu. Coba lagi.',
+      GoogleSignInExceptionCode.uiUnavailable =>
+        'Jendela masuk Google tidak dapat ditampilkan. Coba lagi.',
+      GoogleSignInExceptionCode.clientConfigurationError ||
+      GoogleSignInExceptionCode.providerConfigurationError =>
+        'Konfigurasi Google Sign-In belum lengkap. Pastikan OAuth client sudah '
+            'dibuat di Firebase Console dan file konfigurasi sudah diunduh ulang.',
+      _ => error.description ?? 'Gagal masuk dengan Google. Coba lagi.',
+    };
   }
 }

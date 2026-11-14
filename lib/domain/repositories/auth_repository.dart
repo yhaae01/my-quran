@@ -8,6 +8,8 @@ abstract interface class AuthRepository {
 
   Future<AppUser> signInAnonymously();
 
+  Future<AppUser> signInWithGoogle();
+
   Future<AppUser> signInWithEmail({
     required String email,
     required String password,

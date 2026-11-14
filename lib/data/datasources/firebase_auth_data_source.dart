@@ -15,6 +15,18 @@ class FirebaseAuthDataSource {
     return credential.user!;
   }
 
+  Future<User> signInWithGoogle(String idToken) async {
+    final credential = GoogleAuthProvider.credential(idToken: idToken);
+    final result = await _auth.signInWithCredential(credential);
+    return result.user!;
+  }
+
+  /// Web-only flow: Google Sign-In on web must run through a Firebase popup.
+  Future<User> signInWithGooglePopup() async {
+    final result = await _auth.signInWithPopup(GoogleAuthProvider());
+    return result.user!;
+  }
+
   Future<User> signInWithEmail(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,
