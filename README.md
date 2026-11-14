@@ -118,7 +118,7 @@
 - **Dedicated Mushaf Palettes**: Specially tuned warm parchment color scheme for daytime readability and deep OLED contrast tones for comfortable night reading.
 
 ### 6. Firebase Reading Challenges & Collaboration
-- **Frictionless Auth**: Start instantly with Anonymous sign-in, sign in with Google, or create an account via Email & Password. Dismissing the Google account chooser is treated as a normal cancellation, an existing Google session is reused silently, and a rejected credential clears the cached Google session before the next attempt.
+- **Email & Password Auth**: Sign in or create an account with email and password, plus a lightweight guest (Anonymous) sign-in for joining groups without an account. The registration form validates empty fields, email format, minimum password length and password confirmation, and both password fields have show/hide toggles.
 - **Reading Groups (Khatam Together)**:
   - Create groups with auto-generated, collision-free 6-character invite codes (ambiguous characters like `0`, `O`, `1`, `I` excluded).
   - Join via invite code with real-time membership validation in Firestore transactions.
@@ -318,37 +318,8 @@ dart run flutter_native_splash:create
      flutterfire configure
      ```
    - In **Firebase Console → Authentication → Sign-in method**, enable:
-     - **Anonymous**
      - **Email/Password**
-     - **Google**
-   - After enabling **Google**, re-download the platform config files — they must
-     include the OAuth client identifiers:
-     - `android/app/google-services.json` needs an `oauth_client` entry with
-       `"client_type": 3` (web client). The Android plugin reads it
-       automatically.
-     - `ios/Runner/GoogleService-Info.plist` needs `CLIENT_ID` and
-       `REVERSED_CLIENT_ID`.
-   - For **iOS**, also add the Google keys to `ios/Runner/Info.plist`
-     (`CLIENT_ID` and `REVERSED_CLIENT_ID` come from `GoogleService-Info.plist`):
-     ```xml
-     <key>GIDClientID</key>
-     <string>[CLIENT_ID]</string>
-     <key>CFBundleURLTypes</key>
-     <array>
-       <dict>
-         <key>CFBundleTypeRole</key>
-         <string>Editor</string>
-         <key>CFBundleURLSchemes</key>
-         <array>
-           <string>[REVERSED_CLIENT_ID]</string>
-         </array>
-       </dict>
-     </array>
-     ```
-   - Android builds also need the signing certificate's SHA-1/SHA-256 registered
-     in **Firebase Console → Project settings → Your apps** (add both debug and
-     release fingerprints, otherwise Google sign-in silently fails on release).
-   - On web, Google sign-in uses a Firebase popup instead of the native SDK.
+     - **Anonymous** *(optional, for guest sign-in)*
    - In **Firebase Console → Firestore Database**, create a database and deploy rules:
      ```bash
      firebase deploy --only firestore:rules

@@ -524,20 +524,28 @@ class _SignInView extends ConsumerStatefulWidget {
 }
 
 class _SignInViewState extends ConsumerState<_SignInView> {
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _name = TextEditingController();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
-  final TextEditingController _name = TextEditingController();
+  final TextEditingController _confirmPassword = TextEditingController();
 
-  bool _emailMode = false;
   bool _register = false;
   bool _busy = false;
-  bool _googleBusy = false;
+  bool _guestBusy = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmation = true;
+
+  bool get _disabled => _busy || _guestBusy;
 
   @override
   void dispose() {
+    _name.dispose();
     _email.dispose();
     _password.dispose();
-    _name.dispose();
+    _confirmPassword.dispose();
     super.dispose();
   }
 
@@ -545,6 +553,11 @@ class _SignInViewState extends ConsumerState<_SignInView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    const busyIndicator = SizedBox(
+      width: 18,
+      height: 18,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
@@ -568,39 +581,153 @@ class _SignInViewState extends ConsumerState<_SignInView> {
             height: 1.5,
           ),
         ),
-        const SizedBox(height: 28),
-        FilledButton.icon(
-          onPressed: _busy || _googleBusy ? null : _signInAnonymously,
-          icon: _busy && !_emailMode
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.person_outline),
-          label: const Text('Masuk sebagai tamu'),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Cukup untuk bergabung ke grup. Tanpa email atau kata sandi.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
+        const SizedBox(height: 24),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+            child: Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    _register ? 'Buat akun baru' : 'Masuk dengan email',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_register) ...[
+                    TextFormField(
+                      key: const Key('auth_name'),
+                      controller: _name,
+                      enabled: !_disabled,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama tampilan',
+                        prefixIcon: Icon(Icons.badge_outlined),
+                      ),
+                      validator: (value) => (value ?? '').trim().isEmpty
+                          ? 'Nama tampilan wajib diisi.'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  TextFormField(
+                    key: const Key('auth_email'),
+                    controller: _email,
+                    enabled: !_disabled,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.mail_outline),
+                    ),
+                    validator: (value) {
+                      final email = (value ?? '').trim();
+                      if (email.isEmpty) return 'Email wajib diisi.';
+                      if (!_emailPattern.hasMatch(email)) {
+                        return 'Format email tidak valid.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: const Key('auth_password'),
+                    controller: _password,
+                    enabled: !_disabled,
+                    obscureText: _obscurePassword,
+                    textInputAction: _register
+                        ? TextInputAction.next
+                        : TextInputAction.done,
+                    onFieldSubmitted: _register ? null : (_) => _submitEmail(),
+                    decoration: InputDecoration(
+                      labelText: 'Kata sandi',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword
+                            ? 'Tampilkan kata sandi'
+                            : 'Sembunyikan kata sandi',
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      final password = value ?? '';
+                      if (password.isEmpty) return 'Kata sandi wajib diisi.';
+                      if (password.length < 6) {
+                        return 'Kata sandi minimal 6 karakter.';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_register) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      key: const Key('auth_confirm_password'),
+                      controller: _confirmPassword,
+                      enabled: !_disabled,
+                      obscureText: _obscureConfirmation,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _submitEmail(),
+                      decoration: InputDecoration(
+                        labelText: 'Ulangi password',
+                        prefixIcon: const Icon(Icons.lock_reset_outlined),
+                        suffixIcon: IconButton(
+                          tooltip: _obscureConfirmation
+                              ? 'Tampilkan ulangi password'
+                              : 'Sembunyikan ulangi password',
+                          onPressed: () => setState(
+                            () => _obscureConfirmation = !_obscureConfirmation,
+                          ),
+                          icon: Icon(
+                            _obscureConfirmation
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        final confirmation = value ?? '';
+                        if (confirmation.isEmpty) return 'Ulangi password.';
+                        if (confirmation != _password.text) {
+                          return 'Konfirmasi kata sandi tidak sama.';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  FilledButton(
+                    onPressed: _disabled ? null : _submitEmail,
+                    child: _busy
+                        ? busyIndicator
+                        : Text(_register ? 'Daftar' : 'Masuk'),
+                  ),
+                  TextButton(
+                    onPressed: _disabled ? null : _toggleMode,
+                    child: Text(
+                      _register
+                          ? 'Sudah punya akun? Masuk'
+                          : 'Belum punya akun? Daftar',
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: _busy || _googleBusy ? null : _signInWithGoogle,
-          icon: _googleBusy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.g_mobiledata),
-          label: const Text('Masuk dengan Google'),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         Row(
           children: [
             Expanded(child: Divider(color: scheme.outlineVariant)),
@@ -616,135 +743,64 @@ class _SignInViewState extends ConsumerState<_SignInView> {
             Expanded(child: Divider(color: scheme.outlineVariant)),
           ],
         ),
-        const SizedBox(height: 18),
-        if (!_emailMode)
-          OutlinedButton.icon(
-            onPressed: _busy || _googleBusy
-                ? null
-                : () => setState(() => _emailMode = true),
-            icon: const Icon(Icons.alternate_email),
-            label: const Text('Masuk dengan email'),
-          )
-        else
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_register) ...[
-                    TextField(
-                      controller: _name,
-                      textCapitalization: TextCapitalization.words,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama tampilan',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  TextField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    autocorrect: false,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.mail_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _password,
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _submitEmail(),
-                    decoration: const InputDecoration(
-                      labelText: 'Kata sandi',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _busy || _googleBusy ? null : _submitEmail,
-                    child: _busy
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(_register ? 'Daftar' : 'Masuk'),
-                  ),
-                  TextButton(
-                    onPressed: _busy || _googleBusy
-                        ? null
-                        : () => setState(() {
-                            _register = !_register;
-                            _emailMode = true;
-                          }),
-                    child: Text(
-                      _register
-                          ? 'Sudah punya akun? Masuk'
-                          : 'Belum punya akun? Daftar',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        const SizedBox(height: 14),
+        OutlinedButton.icon(
+          onPressed: _disabled ? null : _signInAnonymously,
+          icon: _guestBusy ? busyIndicator : const Icon(Icons.person_outline),
+          label: const Text('Masuk sebagai tamu'),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Cukup untuk bergabung ke grup. Tanpa email atau kata sandi.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
           ),
+        ),
       ],
     );
   }
 
+  void _toggleMode() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _register = !_register;
+      _confirmPassword.clear();
+      _obscurePassword = true;
+      _obscureConfirmation = true;
+    });
+  }
+
   Future<void> _signInAnonymously() async {
-    setState(() => _busy = true);
+    setState(() => _guestBusy = true);
     try {
       await ref.read(authControllerProvider.notifier).signInAnonymously();
     } catch (error) {
       _showError(error);
     } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _signInWithGoogle() async {
-    setState(() => _googleBusy = true);
-    try {
-      await ref.read(authControllerProvider.notifier).signInWithGoogle();
-    } catch (error) {
-      _showError(error);
-    } finally {
-      if (mounted) setState(() => _googleBusy = false);
+      if (mounted) setState(() => _guestBusy = false);
     }
   }
 
   Future<void> _submitEmail() async {
-    final email = _email.text.trim();
-    final password = _password.text;
-    if (email.isEmpty || !email.contains('@')) {
-      _showError('Masukkan alamat email yang valid.');
-      return;
-    }
-    if (password.length < 6) {
-      _showError('Kata sandi minimal 6 karakter.');
-      return;
-    }
+    if (_disabled) return;
+    FocusScope.of(context).unfocus();
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _busy = true);
     try {
       final controller = ref.read(authControllerProvider.notifier);
       if (_register) {
-        final name = _name.text.trim().isEmpty
-            ? email.split('@').first
-            : _name.text.trim();
         await controller.register(
-          email: email,
-          password: password,
-          displayName: name,
+          email: _email.text.trim(),
+          password: _password.text,
+          displayName: _name.text.trim(),
         );
       } else {
-        await controller.signIn(email: email, password: password);
+        await controller.signIn(
+          email: _email.text.trim(),
+          password: _password.text,
+        );
       }
     } catch (error) {
       _showError(error);

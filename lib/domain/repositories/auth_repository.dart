@@ -8,9 +8,6 @@ abstract interface class AuthRepository {
 
   Future<AppUser> signInAnonymously();
 
-  /// Returns null when the visitor dismisses the Google account chooser.
-  Future<AppUser?> signInWithGoogle();
-
   Future<AppUser> signInWithEmail({
     required String email,
     required String password,

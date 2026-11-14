@@ -17,14 +17,6 @@ class SignInAnonymously {
   Future<AppUser> call() => _repository.signInAnonymously();
 }
 
-class SignInWithGoogle {
-  const SignInWithGoogle(this._repository);
-
-  final AuthRepository _repository;
-
-  Future<AppUser?> call() => _repository.signInWithGoogle();
-}
-
 class SignInWithEmail {
   const SignInWithEmail(this._repository);
 

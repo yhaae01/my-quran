@@ -23,10 +23,6 @@ class AuthController extends AsyncNotifier<void> {
     return _run(() => ref.read(signInAnonymouslyProvider)());
   }
 
-  Future<void> signInWithGoogle() {
-    return _run(() => ref.read(signInWithGoogleProvider)());
-  }
-
   Future<void> signIn({required String email, required String password}) {
     return _run(
       () => ref.read(signInWithEmailProvider)(email: email, password: password),
