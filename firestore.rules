@@ -1,0 +1,56 @@
+rules_version = '2';
+
+// Rules for the reading challenge feature.
+//
+// Deploy with:
+//   firebase deploy --only firestore:rules
+// or paste them into Firebase Console → Firestore Database → Rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isGroupOwner(groupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/groups/$(groupId))
+          .data.ownerId == request.auth.uid;
+    }
+
+    // Invite codes are readable by signed-in readers so they can look up a
+    // group, but a code can only ever be reserved once.
+    match /groupCodes/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && !exists(/databases/$(database)/documents/groupCodes/$(code));
+      allow update, delete: if false;
+    }
+
+    match /groups/{groupId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberUids == [request.auth.uid];
+
+      // Owners may rename the group; members may only adjust the membership
+      // fields when they join or leave.
+      allow update: if signedIn()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.code == resource.data.code
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'memberCount', 'memberUids']);
+
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      // Each member owns exactly one progress document.
+      match /members/{uid} {
+        allow read: if signedIn();
+        allow create, update: if signedIn() && uid == request.auth.uid;
+        // Members remove their own row; the owner can clean up the group.
+        allow delete: if signedIn()
+          && (uid == request.auth.uid || isGroupOwner(groupId));
+      }
+    }
+  }
+}

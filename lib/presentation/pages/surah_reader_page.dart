@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../domain/entities/ayah.dart';
 import '../../domain/entities/mushaf.dart';
 import '../../domain/entities/surah.dart';
 import '../providers/audio_provider.dart';
 import '../providers/core_providers.dart';
 import '../providers/quran_providers.dart';
+import '../providers/reading_progress_providers.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/ayah_tile.dart';
 import '../widgets/common_views.dart';
@@ -102,23 +106,19 @@ class SurahReaderPage extends ConsumerWidget {
           onRetry: () => ref.invalidate(surahDetailProvider(surahNumber)),
         ),
         data: (detail) {
-          final target = initialVerseNumber;
-          return ScrollablePositionedList.builder(
-            padding: const EdgeInsets.only(bottom: 32),
-            itemCount: detail.ayahs.length + 1,
-            initialScrollIndex: target == null
-                ? 0
-                : target.clamp(1, detail.ayahs.length).toInt(),
-            initialAlignment: 0.03,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _SurahHeader(surah: detail.surah, style: style);
-              }
-              final ayah = detail.ayahs[index - 1];
-              return AyahTile(
-                surah: detail.surah,
-                ayah: ayah,
-                highlighted: target == ayah.number,
+          return _AyahList(
+            detail: detail,
+            style: style,
+            target: initialVerseNumber,
+            onAyahVisible: (ayah) {
+              unawaited(
+                ref
+                    .read(readingProgressProvider.notifier)
+                    .record(
+                      surahNumber: detail.surah.number,
+                      ayahNumber: ayah.number,
+                      surahName: detail.surah.latinName,
+                    ),
               );
             },
           );
@@ -144,6 +144,87 @@ class SurahReaderPage extends ConsumerWidget {
       MaterialPageRoute<void>(
         builder: (_) => MushafReaderPage(initialPage: page),
       ),
+    );
+  }
+}
+
+/// Scrollable ayah list that reports the first visible verse so the reading
+/// challenge can follow along without storing anything on every scroll tick.
+class _AyahList extends StatefulWidget {
+  const _AyahList({
+    required this.detail,
+    required this.style,
+    required this.target,
+    required this.onAyahVisible,
+  });
+
+  final SurahDetail detail;
+  final MushafStyle style;
+  final int? target;
+  final ValueChanged<Ayah> onAyahVisible;
+
+  @override
+  State<_AyahList> createState() => _AyahListState();
+}
+
+class _AyahListState extends State<_AyahList> {
+  final ItemPositionsListener _positions = ItemPositionsListener.create();
+  int? _lastReportedAyah;
+
+  @override
+  void initState() {
+    super.initState();
+    _positions.itemPositions.addListener(_reportVisibleAyah);
+  }
+
+  @override
+  void dispose() {
+    _positions.itemPositions.removeListener(_reportVisibleAyah);
+    super.dispose();
+  }
+
+  void _reportVisibleAyah() {
+    int? firstVisible;
+    for (final position in _positions.itemPositions.value) {
+      if (position.itemTrailingEdge <= 0) continue;
+      if (firstVisible == null || position.index < firstVisible) {
+        firstVisible = position.index;
+      }
+    }
+    // Index 0 is the surah header, verse tiles start at index 1.
+    if (firstVisible == null ||
+        firstVisible < 1 ||
+        firstVisible > widget.detail.ayahs.length) {
+      return;
+    }
+    final ayah = widget.detail.ayahs[firstVisible - 1];
+    if (_lastReportedAyah == ayah.number) return;
+    _lastReportedAyah = ayah.number;
+    widget.onAyahVisible(ayah);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final target = widget.target;
+    return ScrollablePositionedList.builder(
+      padding: const EdgeInsets.only(bottom: 32),
+      itemPositionsListener: _positions,
+      itemCount: widget.detail.ayahs.length + 1,
+      initialScrollIndex: target == null
+          ? 0
+          : target.clamp(1, widget.detail.ayahs.length).toInt(),
+      initialAlignment: 0.03,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _SurahHeader(surah: widget.detail.surah, style: widget.style);
+        }
+        final ayah = widget.detail.ayahs[index - 1];
+        return AyahTile(
+          surah: widget.detail.surah,
+          ayah: ayah,
+          highlighted: target == ayah.number,
+        );
+      },
     );
   }
 }

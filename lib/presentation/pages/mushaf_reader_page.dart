@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/mushaf.dart';
 import '../providers/quran_providers.dart';
+import '../providers/reading_progress_providers.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/common_views.dart';
 import '../widgets/mushaf_page_widget.dart';
@@ -26,6 +29,40 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
     super.initState();
     _currentPage = widget.initialPage.clamp(1, mushafPageCount).toInt();
     _controller = PageController(initialPage: _currentPage - 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_recordProgress(_currentPage));
+    });
+  }
+
+  /// Feeds the first verse of the visible page to the reading challenge.
+  Future<void> _recordProgress(int pageNumber) async {
+    final style = ref.read(
+      settingsProvider.select((settings) => settings.mushafStyle),
+    );
+    try {
+      final page = await ref.read(
+        mushafPageProvider(MushafPageQuery(style: style, page: pageNumber))
+            .future,
+      );
+      if (page.ayahs.isEmpty) return;
+      final ayah = page.ayahs.first;
+      var surahName = 'Surah ${ayah.surahNumber}';
+      for (final surah in page.surahs) {
+        if (surah.number == ayah.surahNumber) {
+          surahName = surah.latinName;
+          break;
+        }
+      }
+      await ref
+          .read(readingProgressProvider.notifier)
+          .record(
+            surahNumber: ayah.surahNumber,
+            ayahNumber: ayah.number,
+            surahName: surahName,
+          );
+    } catch (_) {
+      // Progress tracking is best effort; never block page rendering.
+    }
   }
 
   @override
@@ -79,6 +116,7 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
               itemCount: mushafPageCount,
               onPageChanged: (index) {
                 setState(() => _currentPage = index + 1);
+                unawaited(_recordProgress(index + 1));
               },
               itemBuilder: (context, index) {
                 final query = MushafPageQuery(style: style, page: index + 1);

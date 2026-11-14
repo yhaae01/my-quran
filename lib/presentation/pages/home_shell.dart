@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'bookmarks_page.dart';
+import 'challenge_page.dart';
 import 'mushaf_reader_page.dart';
 import 'settings_page.dart';
 import 'surah_list_page.dart';
@@ -16,6 +17,7 @@ class _HomeShellState extends State<HomeShell> {
   static const List<Widget> _pages = [
     SurahListPage(),
     MushafReaderPage(),
+    ChallengePage(),
     BookmarksPage(),
     SettingsPage(),
   ];
@@ -41,6 +43,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.auto_stories_outlined),
             selectedIcon: Icon(Icons.auto_stories),
             label: 'Mushaf',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups),
+            label: 'Tantangan',
           ),
           NavigationDestination(
             icon: Icon(Icons.bookmarks_outlined),
