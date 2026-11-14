@@ -16,7 +16,7 @@ import '../providers/settings_providers.dart';
 import '../widgets/ayah_tile.dart';
 import '../widgets/common_views.dart';
 import '../widgets/font_size_sheet.dart';
-import '../widgets/mushaf_style_sheet.dart';
+import '../widgets/immersive_reader.dart';
 import '../widgets/quran_text.dart';
 import 'mushaf_reader_page.dart';
 
@@ -39,7 +39,9 @@ class SurahReaderPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final detailAsync = ref.watch(surahDetailProvider(surahNumber));
     final detail = detailAsync.value;
-    final style = ref.watch(settingsProvider).mushafStyle;
+    final settings = ref.watch(settingsProvider);
+    final style = settings.mushafStyle;
+    final showTranslation = settings.showTranslation;
 
     ref.listen<String?>(ayahAudioProvider.select((state) => state.error), (
       previous,
@@ -51,78 +53,103 @@ class SurahReaderPage extends ConsumerWidget {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              detail?.surah.latinName ??
-                  initialSurahName ??
-                  'Surah $surahNumber',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (detail != null)
-              Text(
-                '${detail.surah.verseCount} ayat • ${detail.surah.revelation}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Ukuran teks Arab',
-            onPressed: () => showFontSizeSheet(context),
-            icon: const Icon(Icons.format_size),
-          ),
-          IconButton(
-            tooltip: 'Gaya mushaf',
-            onPressed: () => showMushafStyleSheet(context),
-            icon: const Icon(Icons.palette_outlined),
-          ),
-          IconButton(
-            tooltip: 'Buka di mushaf',
-            onPressed: detail == null
-                ? null
-                : () => _openInMushaf(
-                    context,
-                    ref,
-                    style,
-                    surahNumber,
-                    initialVerseNumber ?? 1,
-                  ),
-            icon: const Icon(Icons.auto_stories_outlined),
-          ),
-        ],
-      ),
-      body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => ErrorView(
-          message: error.toString(),
-          onRetry: () => ref.invalidate(surahDetailProvider(surahNumber)),
-        ),
-        data: (detail) {
-          return _AyahList(
-            detail: detail,
-            style: style,
-            target: initialVerseNumber,
-            onAyahVisible: (ayah) {
-              unawaited(
-                ref
-                    .read(readingProgressProvider.notifier)
-                    .record(
-                      surahNumber: detail.surah.number,
-                      ayahNumber: ayah.number,
-                      surahName: detail.surah.latinName,
+    return ImmersiveReader(
+      builder: (context, immersive, toggleImmersive) => Scaffold(
+        appBar: immersive
+            ? null
+            : AppBar(
+                title: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      detail?.surah.latinName ??
+                          initialSurahName ??
+                          'Surah $surahNumber',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (detail != null)
+                      Text(
+                        '${detail.surah.verseCount} ayat • '
+                        '${detail.surah.revelation}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+                actions: [
+                  IconButton(
+                    tooltip: showTranslation
+                        ? 'Sembunyikan terjemahan'
+                        : 'Tampilkan terjemahan',
+                    onPressed: () =>
+                        ref.read(settingsProvider.notifier).toggleTranslation(),
+                    icon: Icon(
+                      showTranslation
+                          ? Icons.subtitles_outlined
+                          : Icons.subtitles_off_outlined,
+                      color: showTranslation
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Ukuran teks Arab',
+                    onPressed: () => showFontSizeSheet(context),
+                    icon: const Icon(Icons.format_size),
+                  ),
+                  IconButton(
+                    tooltip: 'Buka di mushaf',
+                    onPressed: detail == null
+                        ? null
+                        : () => _openInMushaf(
+                            context,
+                            ref,
+                            style,
+                            surahNumber,
+                            initialVerseNumber ?? 1,
+                          ),
+                    icon: const Icon(Icons.auto_stories_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Mode baca penuh',
+                    onPressed: toggleImmersive,
+                    icon: const Icon(Icons.fullscreen_rounded),
+                  ),
+                ],
+              ),
+        body: SafeArea(
+          top: immersive,
+          bottom: false,
+          child: detailAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => ErrorView(
+              message: error.toString(),
+              onRetry: () => ref.invalidate(surahDetailProvider(surahNumber)),
+            ),
+            data: (detail) {
+              return _AyahList(
+                detail: detail,
+                style: style,
+                topPadding: immersive ? 58 : 0,
+                target: initialVerseNumber,
+                onAyahVisible: (ayah) {
+                  unawaited(
+                    ref
+                        .read(readingProgressProvider.notifier)
+                        .record(
+                          surahNumber: detail.surah.number,
+                          ayahNumber: ayah.number,
+                          surahName: detail.surah.latinName,
+                        ),
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -156,11 +183,15 @@ class _AyahList extends StatefulWidget {
     required this.style,
     required this.target,
     required this.onAyahVisible,
+    this.topPadding = 0,
   });
 
   final SurahDetail detail;
   final MushafStyle style;
   final int? target;
+
+  /// Leaves room for the floating immersive-mode exit button.
+  final double topPadding;
   final ValueChanged<Ayah> onAyahVisible;
 
   @override
@@ -207,7 +238,7 @@ class _AyahListState extends State<_AyahList> {
   Widget build(BuildContext context) {
     final target = widget.target;
     return ScrollablePositionedList.builder(
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: EdgeInsets.only(top: widget.topPadding, bottom: 32),
       itemPositionsListener: _positions,
       itemCount: widget.detail.ayahs.length + 1,
       initialScrollIndex: target == null

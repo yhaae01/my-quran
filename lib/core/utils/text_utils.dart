@@ -49,7 +49,19 @@ const List<String> _indonesianMonths = [
   'Des',
 ];
 
-String formatShortDate(DateTime date) {
+String _twoDigits(int value) => value.toString().padLeft(2, '0');
+
+/// Human-friendly timestamp for saved items, e.g. "Hari ini, 14:05" or
+/// "3 Nov 2026, 08:30".
+String formatDateTimeLabel(DateTime date) {
   final local = date.toLocal();
-  return '${local.day} ${_indonesianMonths[local.month - 1]} ${local.year}';
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(local.year, local.month, local.day);
+  final time = '${_twoDigits(local.hour)}:${_twoDigits(local.minute)}';
+
+  if (day == today) return 'Hari ini, $time';
+  if (today.difference(day).inDays == 1) return 'Kemarin, $time';
+  return '${local.day} ${_indonesianMonths[local.month - 1]} '
+      '${local.year}, $time';
 }

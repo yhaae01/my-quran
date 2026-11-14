@@ -22,7 +22,7 @@ class SignInWithGoogle {
 
   final AuthRepository _repository;
 
-  Future<AppUser> call() => _repository.signInWithGoogle();
+  Future<AppUser?> call() => _repository.signInWithGoogle();
 }
 
 class SignInWithEmail {

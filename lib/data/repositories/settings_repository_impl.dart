@@ -13,6 +13,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   final Box<dynamic> _box;
 
   static const String _fontSizeKey = 'arabic_font_size';
+  static const String _showTranslationKey = 'show_translation';
   static const String _mushafStyleKey = 'mushaf_style';
   static const String _themeModeKey = 'theme_mode';
   static const String _prayerNotificationsKey = 'prayer_notifications_enabled';
@@ -27,6 +28,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   AppSettings load() {
     final storedSize = _box.get(_fontSizeKey);
+    final storedShowTranslation = _box.get(_showTranslationKey);
     final storedStyle = _box.get(_mushafStyleKey);
     final storedThemeMode = _box.get(_themeModeKey);
     final storedNotifications = _box.get(_prayerNotificationsKey);
@@ -50,6 +52,9 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
     return AppSettings(
       arabicFontSize: fontSize,
+      showTranslation: storedShowTranslation is bool
+          ? storedShowTranslation
+          : true,
       mushafStyle: storedStyle is String
           ? MushafStyle.fromId(storedStyle)
           : MushafStyle.kemenag,
@@ -93,6 +98,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<void> save(AppSettings settings) async {
     await _box.put(_fontSizeKey, settings.arabicFontSize);
+    await _box.put(_showTranslationKey, settings.showTranslation);
     await _box.put(_mushafStyleKey, settings.mushafStyle.id);
     await _box.put(_themeModeKey, settings.themeMode.name);
 

@@ -29,14 +29,15 @@ class FontSizeSheet extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Ukuran teks Arab',
+              'Tampilan bacaan',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Berlaku untuk tampilan ayat per ayat.',
+              'Atur ukuran teks Arab dan tampilkan atau sembunyikan '
+              'terjemahan saat membaca.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -95,7 +96,23 @@ class FontSizeSheet extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 6),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(
+                settings.showTranslation
+                    ? Icons.subtitles_outlined
+                    : Icons.subtitles_off_outlined,
+              ),
+              title: const Text('Tampilkan terjemahan'),
+              subtitle: const Text(
+                'Matikan untuk membaca teks Arab saja, tanpa terjemahan.',
+              ),
+              value: settings.showTranslation,
+              onChanged: (value) =>
+                  ref.read(settingsProvider.notifier).setShowTranslation(value),
+            ),
+            const SizedBox(height: 10),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Selesai'),

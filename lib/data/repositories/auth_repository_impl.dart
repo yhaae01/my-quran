@@ -28,14 +28,35 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AppUser> signInWithGoogle() {
-    return _guard(() async {
-      if (kIsWeb) {
-        return _toUser(await _auth.signInWithGooglePopup())!;
-      }
-      final idToken = await _google.signIn();
-      return _toUser(await _auth.signInWithGoogle(idToken))!;
-    });
+  Future<AppUser?> signInWithGoogle() async {
+    if (kIsWeb) {
+      return _guard(() async {
+        try {
+          return _toUser(await _auth.signInWithGooglePopup());
+        } on FirebaseAuthException catch (error) {
+          // Closing the popup is a cancellation, not a failure.
+          if (_isGoogleCancellation(error)) return null;
+          rethrow;
+        }
+      });
+    }
+
+    final idToken = await _guard(_google.signIn);
+    // The visitor dismissed the account chooser; keep the current session.
+    if (idToken == null) return null;
+
+    try {
+      return await _guard(
+        () async => _toUser(await _auth.signInWithGoogle(idToken)),
+      );
+    } on Failure {
+      // Firebase rejected the Google credential (for example because the email
+      // is already linked to another provider). Clear the cached Google
+      // session so the next attempt opens the account chooser again instead of
+      // silently reusing a credential that cannot be exchanged.
+      await _signOutGoogleQuietly();
+      rethrow;
+    }
   }
 
   @override
@@ -79,12 +100,25 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signOut() async {
     await _auth.signOut();
+    await _signOutGoogleQuietly();
+  }
+
+  Future<void> _signOutGoogleQuietly() async {
     try {
       await _google.signOut();
     } catch (_) {
       // The Firebase session is already cleared, so a Google SDK hiccup here
       // must not block signing out.
     }
+  }
+
+  static bool _isGoogleCancellation(FirebaseAuthException error) {
+    return switch (error.code) {
+      'popup-closed-by-user' ||
+      'cancelled-popup-request' ||
+      'web-context-cancelled' => true,
+      _ => false,
+    };
   }
 
   AppUser? _toUser(User? user) {
@@ -104,6 +138,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   Future<T> _guard<T>(Future<T> Function() action) async {
+    // Wraps every auth call so SDK/network errors surface as a localized
+    // [Failure] and cancellation stays a regular result.
     try {
       return await action();
     } on Failure {

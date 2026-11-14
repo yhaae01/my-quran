@@ -115,22 +115,24 @@ class AyahTile extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Divider(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-              height: 1,
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: Text(
-                ayah.translation,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.55,
+            if (settings.showTranslation) ...[
+              const SizedBox(height: 12),
+              Divider(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                height: 1,
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Text(
+                  ayah.translation,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.55,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

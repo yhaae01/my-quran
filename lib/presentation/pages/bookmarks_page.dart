@@ -207,6 +207,46 @@ class _GroupHeader extends StatelessWidget {
   }
 }
 
+class _ColorTag extends StatelessWidget {
+  const _ColorTag({required this.color});
+
+  final BookmarkColor color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.color.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: color.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            color.label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BookmarkCard extends ConsumerWidget {
   const _BookmarkCard({required this.bookmark});
 
@@ -279,22 +319,48 @@ class _BookmarkCard extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                bookmark.reference,
+                                bookmark.surahName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
+                            _ColorTag(color: bookmark.color),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Surah ${bookmark.surahNumber} • '
+                                'Ayat ${bookmark.verseNumber}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.schedule,
+                              size: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
                             Text(
-                              formatShortDate(bookmark.timestamp),
+                              formatDateTimeLabel(bookmark.timestamp),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Text(
                           bookmark.arabicText,
                           textAlign: TextAlign.right,
@@ -303,21 +369,23 @@ class _BookmarkCard extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: style.fontFamily,
-                            fontSize: 24,
+                            fontSize: 23,
                             height: 1.7,
                             color: theme.colorScheme.onSurface,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          bookmark.translation,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            height: 1.45,
+                        if (bookmark.translation.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            bookmark.translation,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.45,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),

@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/app_settings.dart';
 import '../../domain/entities/mushaf.dart';
 import '../providers/quran_providers.dart';
 import '../providers/reading_progress_providers.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/common_views.dart';
+import '../widgets/immersive_reader.dart';
 import '../widgets/mushaf_page_widget.dart';
 import '../widgets/mushaf_style_sheet.dart';
 
@@ -77,74 +79,120 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
     final style = ref.watch(
       settingsProvider.select((settings) => settings.mushafStyle),
     );
+    final fontSize = ref.watch(
+      settingsProvider.select((settings) => settings.arabicFontSize),
+    );
+    final fontScale = fontSize / AppSettings.defaultArabicFontSize;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return ImmersiveReader(
+      builder: (context, immersive, toggleImmersive) => Scaffold(
+        appBar: immersive
+            ? null
+            : AppBar(
+                title: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Mushaf'),
+                    Text(
+                      style.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  IconButton(
+                    tooltip: 'Gaya mushaf',
+                    onPressed: () => showMushafStyleSheet(context),
+                    icon: const Icon(Icons.palette_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Buka halaman',
+                    onPressed: _showJumpDialog,
+                    icon: const Icon(Icons.find_in_page_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Mode baca penuh',
+                    onPressed: toggleImmersive,
+                    icon: const Icon(Icons.fullscreen_rounded),
+                  ),
+                ],
+              ),
+        body: Stack(
           children: [
-            const Text('Mushaf'),
-            Text(
-              style.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            SafeArea(
+              top: immersive,
+              bottom: false,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _controller,
+                      itemCount: mushafPageCount,
+                      onPageChanged: (index) {
+                        setState(() => _currentPage = index + 1);
+                        unawaited(_recordProgress(index + 1));
+                      },
+                      itemBuilder: (context, index) {
+                        final query = MushafPageQuery(
+                          style: style,
+                          page: index + 1,
+                        );
+                        final pageAsync = ref.watch(mushafPageProvider(query));
+
+                        return pageAsync.when(
+                          data: (page) => MushafPageWidget(
+                            page: page,
+                            fontScale: fontScale,
+                          ),
+                          loading: () =>
+                              const Center(child: CircularProgressIndicator()),
+                          error: (error, _) => ErrorView(
+                            message: error.toString(),
+                            onRetry: () =>
+                                ref.invalidate(mushafPageProvider(query)),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (!immersive)
+                    _PageFooter(
+                      currentPage: _currentPage,
+                      style: style,
+                      onPrevious: _currentPage > 1
+                          ? () => _goToPage(_currentPage - 1)
+                          : null,
+                      onNext: _currentPage < mushafPageCount
+                          ? () => _goToPage(_currentPage + 1)
+                          : null,
+                    ),
+                ],
               ),
             ),
+            if (immersive)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Center(
+                  child: ImmersivePageBadge(
+                    label: '$_currentPage / $mushafPageCount',
+                    onPrevious: _currentPage > 1
+                        ? () => _goToPage(_currentPage - 1)
+                        : null,
+                    onNext: _currentPage < mushafPageCount
+                        ? () => _goToPage(_currentPage + 1)
+                        : null,
+                  ),
+                ),
+              ),
           ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Gaya mushaf',
-            onPressed: () => showMushafStyleSheet(context),
-            icon: const Icon(Icons.palette_outlined),
-          ),
-          IconButton(
-            tooltip: 'Buka halaman',
-            onPressed: _showJumpDialog,
-            icon: const Icon(Icons.find_in_page_outlined),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView.builder(
-              controller: _controller,
-              itemCount: mushafPageCount,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index + 1);
-                unawaited(_recordProgress(index + 1));
-              },
-              itemBuilder: (context, index) {
-                final query = MushafPageQuery(style: style, page: index + 1);
-                final pageAsync = ref.watch(mushafPageProvider(query));
-
-                return pageAsync.when(
-                  data: (page) => MushafPageWidget(page: page),
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, _) => ErrorView(
-                    message: error.toString(),
-                    onRetry: () => ref.invalidate(mushafPageProvider(query)),
-                  ),
-                );
-              },
-            ),
-          ),
-          _PageFooter(
-            currentPage: _currentPage,
-            style: style,
-            onPrevious: _currentPage > 1
-                ? () => _goToPage(_currentPage - 1)
-                : null,
-            onNext: _currentPage < mushafPageCount
-                ? () => _goToPage(_currentPage + 1)
-                : null,
-          ),
-        ],
       ),
     );
   }

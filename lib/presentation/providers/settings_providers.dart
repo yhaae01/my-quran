@@ -24,6 +24,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _update(state.copyWith(arabicFontSize: clamped));
   }
 
+  void setShowTranslation(bool show) {
+    if (show == state.showTranslation) return;
+    _update(state.copyWith(showTranslation: show));
+  }
+
+  void toggleTranslation() => setShowTranslation(!state.showTranslation);
+
   void setMushafStyle(MushafStyle style) {
     if (style == state.mushafStyle) return;
     _update(state.copyWith(mushafStyle: style));

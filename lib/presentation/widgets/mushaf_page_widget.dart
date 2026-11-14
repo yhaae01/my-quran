@@ -8,9 +8,13 @@ import '../../domain/entities/surah.dart';
 import 'quran_text.dart';
 
 class MushafPageWidget extends StatelessWidget {
-  const MushafPageWidget({super.key, required this.page});
+  const MushafPageWidget({super.key, required this.page, this.fontScale = 1});
 
   final MushafPage page;
+
+  /// Multiplies the layout-derived Arabic size so the reading preferences
+  /// slider also resizes the page-by-page mushaf.
+  final double fontScale;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +25,10 @@ class MushafPageWidget extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final fontSize = (constraints.maxWidth * 0.055).clamp(18.0, 28.0);
+          final fontSize = (constraints.maxWidth * 0.055 * fontScale).clamp(
+            15.0,
+            40.0,
+          );
 
           return DecoratedBox(
             decoration: BoxDecoration(

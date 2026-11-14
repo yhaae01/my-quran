@@ -139,6 +139,22 @@ class SettingsPage extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const Divider(),
+                SwitchListTile(
+                  secondary: Icon(
+                    settings.showTranslation
+                        ? Icons.subtitles_outlined
+                        : Icons.subtitles_off_outlined,
+                  ),
+                  title: const Text('Tampilkan terjemahan'),
+                  subtitle: const Text(
+                    'Matikan untuk membaca teks Arab saja tanpa terjemahan.',
+                  ),
+                  value: settings.showTranslation,
+                  onChanged: (value) => ref
+                      .read(settingsProvider.notifier)
+                      .setShowTranslation(value),
+                ),
               ],
             ),
           ),
