@@ -5,32 +5,43 @@
 <h1 align="center">Al-Qur'an</h1>
 
 <p align="center">
-  A calm, offline-first Qur'an reader for Indonesian readers — with Arabic text,
-  Indonesian translation, Madinah and Kemenag mushaf layouts, per-ayah audio,
-  colour-coded bookmarks, a light/dark theme, and shared reading challenges with
-  friends.
+  A serene, offline-first Quran and Islamic companion application built with Flutter — featuring dual-script Mushaf reading (Madinah & Kemenag), Ayah-by-Ayah translation and audio playback, 4-color categorization bookmarks, customizable light/dark themes, collaborative group reading challenges via Firebase, accurate prayer times with Adhan notifications, and interactive Home Screen Widgets for Android and iOS.
 </p>
 
 <p align="center">
   <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.47+-02569B?logo=flutter&logoColor=white">
   <img alt="Dart" src="https://img.shields.io/badge/Dart-3.13+-0175C2?logo=dart&logoColor=white">
-  <img alt="Riverpod" src="https://img.shields.io/badge/State-Riverpod-0F5B4E">
-  <img alt="Hive" src="https://img.shields.io/badge/Storage-Hive-C9A227">
+  <img alt="Riverpod" src="https://img.shields.io/badge/State-Riverpod_3-0F5B4E">
+  <img alt="Hive" src="https://img.shields.io/badge/Storage-Hive_2-C9A227">
   <img alt="Firebase" src="https://img.shields.io/badge/Backend-Firebase-FFCA28?logo=firebase&logoColor=black">
+  <img alt="Adhan" src="https://img.shields.io/badge/Prayer-Adhan-2E7D32">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-blue.svg">
 </p>
 
 ---
 
-## Contents
+## Table of Contents
 
 - [Screenshots](#screenshots)
-- [Key Features](#key-features)
+- [Core Features](#core-features)
+  - [Ayah-by-Ayah Reader](#1-ayah-by-ayah-reader)
+  - [Page-by-Page Mushaf](#2-page-by-page-mushaf-604-pages)
+  - [Color-Coded Bookmarks](#3-color-coded-bookmarks)
+  - [Dark & Light Theme](#4-dark--light-theme)
+  - [Firebase Reading Challenges & Collaboration](#5-firebase-reading-challenges--collaboration)
+  - [Prayer Times, Adhan Notifications & Home Widgets](#6-prayer-times-adhan-notifications--home-widgets)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
+- [Platform Configuration (Android & iOS)](#platform-configuration-android--ios)
+  - [Android Setup](#android-setup)
+  - [iOS Setup](#ios-setup)
 - [App Icon & Splash Screen](#app-icon--splash-screen)
-- [Setup & Installation](#setup--installation)
+- [Setup & Installation Steps](#setup--installation-steps)
+- [Testing & Quality Check](#testing--quality-check)
 - [Data Sources & Credits](#data-sources--credits)
-- [Notes & Limitations](#notes--limitations)
+- [Known Limitations](#known-limitations)
+
+---
 
 ## Screenshots
 
@@ -38,312 +49,352 @@
   <tr>
     <td width="50%" align="center">
       <img src="docs/screenshots/home-light.png" alt="Surah list, light mode" width="300"><br>
-      <strong>Light mode</strong>
+      <strong>Light Mode (Surah List)</strong>
     </td>
     <td width="50%" align="center">
       <img src="docs/screenshots/home-dark.png" alt="Surah list, dark mode" width="300"><br>
-      <strong>Dark mode</strong>
+      <strong>Dark Mode (Surah List)</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <img src="docs/screenshots/reader-light.png" alt="Ayah-by-ayah reader" width="300"><br>
-      <strong>Ayah-by-ayah reading</strong>
+      <strong>Ayah-by-Ayah Reading</strong>
     </td>
     <td width="50%" align="center">
       <img src="docs/screenshots/mushaf-light.png" alt="Mushaf page reader" width="300"><br>
-      <strong>Mushaf page reading</strong>
+      <strong>604-Page Mushaf Reader</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <img src="docs/screenshots/settings-light.png" alt="Settings, light mode" width="300"><br>
-      <strong>Settings &amp; theme picker</strong>
+      <strong>Settings &amp; Theme Picker</strong>
     </td>
     <td width="50%" align="center">
       <img src="docs/screenshots/settings-dark.png" alt="Settings, dark mode" width="300"><br>
-      <strong>Theme picker in dark mode</strong>
+      <strong>Settings in Dark Mode</strong>
     </td>
   </tr>
 </table>
 
-> Screenshots cover the reading experience. The **Tantangan** (reading
-> challenge) screens are not captured yet because they need a signed-in
-> Firebase project.
+---
 
-## Key Features
+## Core Features
 
-### Reading experience
-- **Ayah-by-ayah mode** — Arabic text, Indonesian translation underneath each
-  verse, adjustable Arabic font size, per-ayah audio, and a bookmark action on
-  every verse.
-- **Page-by-page mushaf** — a horizontal `PageView` across 604 pages, complete
-  with juz markers, surah headings, basmalah, ayah-end ornaments, and Arabic
-  page numbers.
-- **Two authentic mushaf layouts** — Madinah (Uthmani text) and Mushaf Standar
-  Indonesia/Kemenag, each with its own page breaks and Arabic script style.
-- **Arabic typography** — bundled Amiri Quran and Scheherazade New fonts. The
-  font size slider applies to the ayah reader and is persisted.
+### 1. Ayah-by-Ayah Reader
+- **Bilingual Display**: Arabic text alongside Indonesian translation for every verse.
+- **Audio Recitation**: Per-ayah streaming murottal audio powered by `just_audio`.
+- **Customizable Typography**: Real-time adjustable Arabic font size slider (persisted locally).
+- **Fast Navigation**: Jump straight to any surah or verse with smooth animated scrolling (`scrollable_positioned_list`).
+- **Quick Action Bar**: Instantly bookmark, copy, or play audio for any individual ayah.
 
-### Bookmarks
-- Save any ayah with one of four colour categories: **red, green, yellow, or
-  blue**.
-- Bookmarks are grouped by colour, filterable, sortable by recency, and can be
-  removed by swipe with an undo action.
-- Tapping a bookmark opens its surah and scrolls directly to the saved ayah,
-  highlighting it on arrival.
-- Bookmarks are stored locally in Hive, so they survive app restarts and work
-  without a connection.
+### 2. Page-by-Page Mushaf (604 Pages)
+- **Authentic Dual Layouts**:
+  - **Madinah Mushaf**: Classic Uthmani script based on King Fahd Complex standards.
+  - **Kemenag Mushaf**: Standard Indonesian layout (Mushaf Standar Indonesia) verified by the Ministry of Religious Affairs (Kemenag).
+- **Faithful Page Layouts**: Exactly 604 pages rendered via high-performance horizontal paging (`PageView`), complete with juz markers, surah heading banners, basmalah calligraphies, and Arabic page numbering.
+- **Offline Asset Index**: Pre-indexed surah and ayah page boundaries bundled in JSON format for instantaneous, offline page resolution.
 
-### Reading challenges with friends
-- **Sign in without friction** — anonymous sign-in for a stable Firebase UID, or
-  email/password registration and login.
-- **Create a group** — each challenge gets a unique 6-character invite code
-  (no ambiguous `I`, `O`, `0`, or `1`), reserved in Firestore inside a
-  transaction so two groups can never share a code.
-- **Join with a code** — friends enter the code, become members, and appear on
-  the leaderboard immediately.
-- **Live leaderboard** — Firestore streams every member's furthest reading
-  position. Rows show rank, name, last surah/ayah reached, a progress bar, and
-  the percentage of the Qur'an completed.
-- **Automatic progress sync** — opening a surah (the first visible ayah) or
-  swiping the mushaf records the position locally in Hive and pushes it, with a
-  short debounce, to every group the reader belongs to.
-- Owners can delete their group; members can leave at any time without losing
-  their local reading position.
+### 3. Color-Coded Bookmarks
+- **Four Categorization Colors**: Mark verses with **Red, Green, Yellow, or Blue** tags to categorize recitations (e.g., daily target, memorization, reflection, favorite verses).
+- **Interactive Management**: Filter bookmarks by color tag, sort by recency, or swipe to delete with an instant "Undo" snackbar.
+- **Direct Jump & Highlight**: Tapping a bookmark directly launches the surah, auto-scrolls to the exact ayah, and triggers a brief visual highlight.
+- **Local Persistence**: Backed by high-speed Hive key-value storage with custom zero-boilerplate binary adapters.
 
-### Light & Dark Mode
-- Three theme preferences: **Terang**, **Gelap**, and **Sistem** (follow the
-  device).
-- A quick sun/moon toggle in the surah list app bar and a segmented control in
-  **Pengaturan → Tema**.
-- Selection is persisted in Hive and restored on startup; theme changes animate
-  smoothly.
-- Every screen uses the app's custom `ThemeData`/`ColorScheme` for backgrounds,
-  cards, text, icons, dividers, sheets, and navigation. The mushaf page has a
-  dedicated parchment palette for each brightness.
+### 4. Dark & Light Theme
+- **Three Modes**: **Light (Terang)**, **Dark (Gelap)**, and **System (Sistem)** matching the device theme.
+- **Quick Toggle**: One-tap toggle button in the main app bar and detailed preference controls in Settings.
+- **Dedicated Mushaf Palettes**: Specially tuned warm parchment color scheme for daytime readability and deep OLED contrast tones for comfortable night reading.
 
-### Data & offline support
-- Quran text, Indonesian translation, and audio URLs from **equran.id**.
-- Madinah/Uthmani text enrichment from **Quran.com**.
-- Surah lists and details are cached in Hive with TTL and stale-cache fallback.
-- Mushaf page boundaries are bundled as an asset, so page navigation and juz
-  metadata are available offline.
+### 5. Firebase Reading Challenges & Collaboration
+- **Frictionless Auth**: Start instantly with Anonymous sign-in or create an account via Email & Password.
+- **Reading Groups (Khatam Together)**:
+  - Create groups with auto-generated, collision-free 6-character invite codes (ambiguous characters like `0`, `O`, `1`, `I` excluded).
+  - Join via invite code with real-time membership validation in Firestore transactions.
+- **Live Leaderboard**: Real-time Firestore stream tracks each member's furthest read verse out of 6,236 verses, displaying progress percentage, current surah/ayah, and rank.
+- **Debounced Sync**: Automatically stores progress locally on page turns and synchronizes to the cloud with a 2-second debounce to minimize battery and network usage.
+
+### 6. Prayer Times, Adhan Notifications & Home Widgets
+- **Astronomical Calculation Engine**: Integrated with `adhan` calculation library using the official Indonesian Ministry of Religious Affairs (Kemenag) method (Fajr 20°, Isha 18°).
+- **Location Modes**:
+  - **GPS Auto-Detection**: Real-time geolocation using `geolocator`.
+  - **Preset Cities**: 35+ major Indonesian cities across WIB, WITA, and WIT timezones.
+- **7-Day Rolling Schedule**: Computes Subuh, Dzuhur, Ashar, Maghrib, and Isya timings with countdown timers.
+- **Timely Notifications**: Scheduled local alerts with custom Islamic notification channels and wake-up alarms (`flutter_local_notifications`).
+- **Home Screen Widgets (`home_widget`)**:
+  - **Android App Widget**: Native 4x2 / 2x2 widget displaying next prayer name, time, location, and countdown Chronometer.
+  - **iOS WidgetKit**: SwiftUI small & medium widgets displaying upcoming prayer time and countdown timer.
+
+---
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Framework | Flutter 3.47+ / Dart 3.13+ |
-| State management | Riverpod 3 (`Notifier`, `AsyncNotifier`, `StreamProvider`, `*.family`) |
-| Backend | Firebase Core, Firebase Auth (anonymous + email), Cloud Firestore |
-| Local storage | Hive 2 (bookmark adapter, settings, reading-progress cache) |
-| Networking | `http` with a small `ApiClient` error-mapping layer |
-| Audio | `just_audio` (murottal per ayah) |
-| Long lists | `scrollable_positioned_list` for jump-to-ayah scrolling |
-| App icon | `flutter_launcher_icons` 0.14.4 |
-| Splash screen | `flutter_native_splash` 2.4.8 |
-| Lints | `flutter_lints` |
+| Layer | Technology | Purpose |
+| --- | --- | --- |
+| **Framework** | Flutter 3.47+ & Dart 3.13+ | Cross-platform UI toolkit |
+| **State Management** | Flutter Riverpod 3 (`Notifier`, `AsyncNotifier`, `StreamProvider`) | Predictable, compile-safe state architecture |
+| **Local Database** | Hive 2 (`hive_flutter`) | High-speed NoSQL storage for settings, bookmarks, and cache |
+| **Cloud Backend** | Firebase Core, Firebase Auth, Cloud Firestore | Real-time challenge collaboration and user accounts |
+| **Prayer Times** | `adhan` | Astronomical solar positioning and prayer calculations |
+| **Location Services** | `geolocator` | GPS coordinate resolution for local prayer times |
+| **Notifications** | `flutter_local_notifications`, `timezone` | Exact alarm scheduling and adhan alerts |
+| **Home Widgets** | `home_widget` | Bridge for Android AppWidget and iOS WidgetKit |
+| **Audio Playback** | `just_audio` | Background audio streaming for per-ayah recitations |
+| **Networking** | `http` | Resilient JSON HTTP client with caching & error handling |
+| **Typography** | Amiri Quran & Scheherazade New | Bundled SIL-licensed authentic Arabic typefaces |
+| **Native Assets** | `flutter_launcher_icons`, `flutter_native_splash` | Adaptive app icons and native splash screens |
+
+---
 
 ## Architecture
 
-The code follows a three-layer clean architecture, with Riverpod as the
-dependency/state bridge:
+The project adheres to **Clean Architecture** principles with clear separation of concerns across presentation, domain, and data layers:
 
 ```text
 lib/
-├── main.dart                  # Hive + Firebase bootstrap, ProviderScope
-├── app.dart                   # MaterialApp + persisted themeMode
+├── main.dart                  # Hive & Firebase bootstrapping, ProviderScope setup
+├── app.dart                   # MaterialApp with dynamic theme resolution
 ├── core/
-│   ├── constants/             # endpoints, Hive names, assets, TTL
-│   ├── error/                 # user-facing Failure type
-│   ├── network/               # JSON ApiClient with timeout handling
-│   ├── theme/                 # custom light/dark ThemeData + bookmark palette
-│   └── utils/                 # Arabic digits, HTML stripping, invite codes
+│   ├── constants/             # API endpoints, Hive box names, asset paths
+│   ├── error/                 # Domain Failure exceptions & error handling
+│   ├── network/               # HTTP ApiClient with timeout & status mappings
+│   ├── theme/                 # Custom ThemeData, color palettes & bookmark styling
+│   └── utils/                 # Arabic digit formatters, HTML parsers, invite code generator
 ├── domain/
-│   ├── entities/              # Ayah, Surah, Mushaf*, Bookmark, AppSettings,
-│   │                          # AppUser, ReadingGroup, MemberProgress, ReadingProgress
-│   ├── repositories/          # repository contracts (Quran, bookmarks, auth, challenge)
-│   └── usecases/              # reading, bookmark, auth, challenge, progress use cases
+│   ├── entities/              # Ayah, Surah, Mushaf, Bookmark, Prayer, ReadingProgress
+│   ├── repositories/          # Abstract contracts (Quran, Bookmarks, Auth, Challenge, Prayer)
+│   └── usecases/              # Pure business logic use cases
 ├── data/
-│   ├── datasources/           # Quran remote/Hive, Firebase Auth, Firestore, progress box
-│   ├── models/                # API JSON, Hive adapter, Firestore group/member models
-│   └── repositories/          # cache-first and Firebase-backed implementations
+│   ├── datasources/           # Remote API, Hive boxes, Firestore streams, Adhan calculator
+│   ├── models/                # API DTOs, Hive binary adapters, Firestore entity models
+│   └── repositories/          # Repository implementations with cache-first strategy
 └── presentation/
-    ├── pages/                 # shell, surah list, readers, challenge, group detail, settings
-    ├── providers/             # Riverpod providers, settings, audio, auth, challenge, progress
-    └── widgets/               # ayah tile, colour sheet, mushaf page, invite code card
+    ├── pages/                 # Home shell, Surah list, Reader, Mushaf, Challenges, Prayer, Settings
+    ├── providers/             # Riverpod providers, Notifiers, and state controllers
+    └── widgets/               # Ayah tile, Mushaf page, Prayer countdown card, Bookmark color sheet
 ```
 
-Firestore security rules are kept in [`firestore.rules`](firestore.rules) at the
-repository root.
+---
 
-**Theme flow:** `SettingsNotifier` exposes `AppSettings`, including
-`AppThemeMode`. `QuranApp` watches only the theme preference with
-`select`, maps it to Flutter's `ThemeMode`, and rebuilds `MaterialApp` when it
-changes. `SettingsRepositoryImpl` writes the choice to the `settings` Hive box
-under `theme_mode`.
+## Platform Configuration (Android & iOS)
 
-**Challenge flow:** `main()` calls `Firebase.initializeApp()` and exposes the
-result through `firebaseReadyProvider`, so the reader still works offline when
-Firebase is not configured. `AuthRepository` maps Firebase users to `AppUser`.
-`ChallengeRepository` creates groups and invite codes, streams the groups of the
-signed-in user (`groups` filtered by `memberUids`) and streams member progress
-(`groups/{id}/members`). `ReadingProgressNotifier` stores the furthest position
-in Hive immediately and syncs it to Firestore after a two-second debounce; the
-leaderboard updates from the live Firestore stream.
+### Android Setup
+
+1. **Core Library Desugaring**:
+   Required by `flutter_local_notifications` for java.time support on older Android devices. Configured in `android/app/build.gradle.kts`:
+   ```kotlin
+   android {
+       compileOptions {
+           isCoreLibraryDesugaringEnabled = true
+           sourceCompatibility = JavaVersion.VERSION_17
+           targetCompatibility = JavaVersion.VERSION_17
+       }
+   }
+   dependencies {
+       coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+   }
+   ```
+
+2. **Permissions (`android/app/src/main/AndroidManifest.xml`)**:
+   ```xml
+   <uses-permission android:name="android.permission.INTERNET"/>
+   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+   <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+   ```
+
+3. **Home Widget Setup**:
+   - Provider class: `android/app/src/main/kotlin/com/example/my_quran/PrayerTimesWidgetProvider.kt` (extends `HomeWidgetProvider`).
+   - Declared receiver in `AndroidManifest.xml`:
+     ```xml
+     <receiver
+         android:name=".PrayerTimesWidgetProvider"
+         android:exported="true">
+         <intent-filter>
+             <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+         </intent-filter>
+         <meta-data
+             android:name="android.appwidget.provider"
+             android:resource="@xml/prayer_times_widget_info"/>
+     </receiver>
+     ```
+   - Layout: Defined in `android/app/src/main/res/layout/prayer_times_widget.xml`.
+   - Widget Info: Defined in `android/app/src/main/res/xml/prayer_times_widget_info.xml`.
+
+---
+
+### iOS Setup
+
+1. **Permission Descriptions & Background Modes (`ios/Runner/Info.plist`)**:
+   ```xml
+   <!-- Location permissions for prayer times -->
+   <key>NSLocationWhenInUseUsageDescription</key>
+   <string>Lokasi digunakan untuk menghitung waktu shalat di tempat Anda berada.</string>
+   <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+   <string>Lokasi digunakan untuk memperbarui dan menghitung jadwal waktu shalat yang akurat sesuai lokasi Anda.</string>
+   <key>NSLocationAlwaysUsageDescription</key>
+   <string>Lokasi digunakan untuk memperbarui dan menghitung jadwal waktu shalat yang akurat sesuai lokasi Anda.</string>
+
+   <!-- Background modes for notifications & widget updates -->
+   <key>UIBackgroundModes</key>
+   <array>
+       <string>fetch</string>
+       <string>remote-notification</string>
+   </array>
+   ```
+
+2. **iOS Widget Extension Setup Guidelines**:
+   - The SwiftUI widget code is located at `ios/PrayerTimesWidget/PrayerTimesWidget.swift`.
+   - **Adding the Widget Target in Xcode**:
+     1. Open `ios/Runner.xcworkspace` in Xcode.
+     2. Go to **File → New → Target...** and select **Widget Extension**.
+     3. Name the target `PrayerTimesWidget` (uncheck "Include Live Activity" and "Include Configuration Intent" if prompted).
+     4. Set the minimum deployment target to iOS 14.0 or higher.
+     5. Replace the generated swift file with `PrayerTimesWidget.swift`.
+   - **Configure App Groups**:
+     1. In Xcode, select the **Runner** target → **Signing & Capabilities** → **+ Capability** → **App Groups**.
+     2. Add `group.com.example.myQuran.prayer` and ensure the checkbox is ticked.
+     3. Select the **PrayerTimesWidgetExtension** target → **Signing & Capabilities** → **+ Capability** → **App Groups**.
+     4. Add and tick the same identifier: `group.com.example.myQuran.prayer`.
+
+---
 
 ## App Icon & Splash Screen
 
-Both generators are configured in `pubspec.yaml`; the artwork lives in
-`assets/icon/`.
+Artwork assets reside in `assets/icon/`:
+- `assets/icon/icon.png`: 1024×1024 master icon (gold open book & star on emerald green).
+- `assets/icon/icon_foreground.png`: Android adaptive icon foreground.
+- `assets/icon/splash_icon.png`: Centered native splash mark.
+- `assets/icon/splash_icon_android12.png`: Android 12+ icon mask.
 
-| Asset | Purpose |
-| --- | --- |
-| `assets/icon/icon.png` | 1024 × 1024 master icon: open book and star in gold on emerald |
-| `assets/icon/icon_foreground.png` | Transparent foreground for Android adaptive icons |
-| `assets/icon/splash_icon.png` | Centred native splash mark for Android ≤ 11 and iOS |
-| `assets/icon/splash_icon_android12.png` | Android 12+ splash glyph on the system icon background |
-
-### Icon configuration
-
-- Android adaptive background: `#0F5B4E`
-- Source image: `assets/icon/icon.png`
-- iOS alpha channel removed automatically
-- Web, macOS, and Windows icons generated from the same master
-
-### Splash configuration
-
-- Light background: `#FFFBF1` (app light surface)
-- Dark background: `#16201C` (app dark surface)
-- Centred icon only, no branding text
-- `image_dark` enables the dark-mode splash
-- Android 12 uses the dedicated glyph and `#0F5B4E` icon background
-
-### Generate the native assets
-
-Run these from the project root after changing the icon or splash artwork:
-
+Generate native launcher icons and splash screens:
 ```bash
-# Launcher icons for Android, iOS, web, macOS, and Windows
+# Generate launcher icons for Android, iOS, Web, macOS, Windows
 dart run flutter_launcher_icons
 
-# Native splash screens for Android, iOS, and web (light + dark)
+# Generate native splash screens for Android, iOS, and Web (light & dark)
 dart run flutter_native_splash:create
 ```
 
-Optional: remove generated splash files again with:
+---
 
-```bash
-dart run flutter_native_splash:remove
-```
-
-> The web splash uses the `flutter-first-frame` event in `web/index.html` to
-> remove itself after Flutter renders. Keep that listener if you regenerate the
-> web splash.
-
-## Setup & Installation
+## Setup & Installation Steps
 
 ### Prerequisites
+- **Flutter SDK**: `>= 3.47.0`
+- **Dart SDK**: `>= 3.13.0`
+- **Android Studio / Xcode** (with CocoaPods installed: `sudo gem install cocoapods`)
+- **Firebase CLI** (optional, required only for reading challenges): `npm install -g firebase-tools`
 
-- Flutter 3.47 or newer, with a configured Android/iOS toolchain
-- Dart 3.13 or newer (bundled with Flutter)
-- Internet access on first launch for surah text and audio
-- Firebase CLI and a Firebase project (only for the reading challenges)
+### Step-by-Step Installation
 
-### Firebase setup (reading challenges)
-
-The reader works without Firebase, but the challenge tab needs a configured
-project:
-
-1. Run `flutterfire configure` once. This project already has
-   `android/app/google-services.json` and `ios/Runner/GoogleService-Info.plist`
-   plus the `com.google.gms.google-services` Gradle plugin wired in.
-2. In **Firebase Console → Authentication → Sign-in method**, enable
-   **Anonymous** and **Email/Password**.
-3. Create a **Cloud Firestore** database (production mode) and apply
-   `firestore.rules`:
-
+1. **Clone the Repository**:
    ```bash
-   firebase deploy --only firestore:rules
+   git clone https://github.com/your-username/my_quran.git
+   cd my_quran
    ```
 
-   Or paste the contents of `firestore.rules` into the console's Rules tab.
-4. Launch the app and open the **Tantangan** tab.
+2. **Install Dependencies**:
+   ```bash
+   flutter pub get
+   ```
 
-The Firestore layout is:
+3. **Firebase Configuration** *(for reading challenges)*:
+   - Configure Firebase apps:
+     ```bash
+     flutterfire configure
+     ```
+   - In **Firebase Console → Authentication → Sign-in method**, enable:
+     - **Anonymous**
+     - **Email/Password**
+   - In **Firebase Console → Firestore Database**, create a database and deploy rules:
+     ```bash
+     firebase deploy --only firestore:rules
+     ```
+     *(Or copy the rules from `firestore.rules` into the console)*.
 
-| Path | Fields |
-| --- | --- |
-| `groups/{groupId}` | `name`, `code`, `ownerId`, `createdAt`, `memberCount`, `memberUids` |
-| `groups/{groupId}/members/{uid}` | `displayName`, `surahNumber`, `surahName`, `ayahNumber`, `versesRead`, `updatedAt` |
-| `groupCodes/{code}` | `groupId`, `createdAt` — reserves each invite code once |
+4. **Generate Native Icons & Splash Screens**:
+   ```bash
+   dart run flutter_launcher_icons
+   dart run flutter_native_splash:create
+   ```
 
-> Progress is measured in verses (6236 in total), so members who read long and
-> short surahs compare fairly. The app records the furthest position reached,
-> not the current page.
->
-> The challenge tab is mobile-only for now: web builds need a registered
-> Firebase web app, and `Firebase.initializeApp()` would have to receive the
-> generated `firebase_options.dart` values. Without them the app still runs and
-> the tab shows its disabled state.
+5. **Run the App**:
+   ```bash
+   # Run on connected device or simulator
+   flutter run
 
-### Run locally
+   # Run on Chrome
+   flutter run -d chrome
+   ```
+
+6. **Release Build Commands**:
+   ```bash
+   # Android App Bundle / APK
+   flutter build appbundle --release
+   flutter build apk --release
+
+   # iOS IPA
+   flutter build ipa --release
+
+   # Web Build
+   flutter build web --release
+   ```
+
+---
+
+## Testing & Quality Check
+
+Run code formatting, static analysis, and automated unit tests using the standard Flutter toolchain:
 
 ```bash
-git clone <your-repository-url>
-cd my_quran
+# 1. Format code according to Dart guidelines
+dart format lib test
 
-flutter pub get
-
-# Generate launcher icons and splash screens
-dart run flutter_launcher_icons
-dart run flutter_native_splash:create
-
-flutter run
-```
-
-For a release web build:
-
-```bash
-flutter build web --release
-```
-
-### Quality checks
-
-```bash
+# 2. Analyze code for warnings and linter errors
 flutter analyze
+
+# 3. Execute all unit and widget tests
 flutter test
 ```
 
-The test suite covers page-index resolution, both bundled 604-page mushaf
-indexes, Hive bookmark persistence, settings/theme persistence, mushaf page
-rendering, cumulative verse progress, and invite-code generation/normalization.
+### Test Suite Highlights
+- `test/bookmark_model_test.dart`: Entity mapping, `copyWith`, and `BookmarkColor` unit tests.
+- `test/bookmark_storage_test.dart`: Hive CRUD operations, sorting, and lifecycle.
+- `test/prayer_times_test.dart`: Solar calculation assertions, timezone formatting (WIB/WITA/WIT), and midnight countdown handling.
+- `test/challenge_progress_test.dart`: 6,236-ayah cumulative math, progress ratio clamping, and invite code validation.
+- `test/mushaf_page_index_test.dart`: 604-page boundary parsing and range resolution.
+- `test/theme_switcher_test.dart`: Reactive theme switching and persistence.
+- `test/widget_test.dart`: Mushaf page rendering and navigation widget test.
+
+---
 
 ## Data Sources & Credits
 
-- **Text, translation, and per-ayah audio** — [equran.id API v2](https://equran.id/apidev/v2)
-- **Madinah Uthmani text** — [Quran.com API v4](https://api-docs.quran.com/)
-- **Madinah page metadata** — [Al Quran Cloud](https://alquran.cloud/api)
-- **Kemenag page index** — [quran-json-kemenag](https://github.com/dyazincahya/quran-json-kemenag)
-- **Arabic fonts** — [Amiri Quran](https://github.com/aliftype/amiri) and
-  [Scheherazade New](https://software.sil.org/scheherazade/), both licensed under
-  the SIL Open Font License. Licence files are in `assets/fonts/`.
+- **Quran Text, Translation & Audio**: [equran.id API v2](https://equran.id/apidev/v2)
+- **Madinah Uthmani Text**: [Quran.com API v4](https://api-docs.quran.com/)
+- **Madinah Page Metadata**: [Al Quran Cloud](https://alquran.cloud/api)
+- **Kemenag Page Index**: [quran-json-kemenag](https://github.com/dyazincahya/quran-json-kemenag)
+- **Prayer Calculations**: [Batoul Apps Adhan](https://github.com/batoulapps/adhan-dart)
+- **Typography**: [Amiri Quran](https://github.com/aliftype/amiri) and [Scheherazade New](https://software.sil.org/scheherazade/) under the SIL Open Font License.
 
-## Notes & Limitations
+---
 
-- Page numbers differ between the two mushaf styles for the same verse because
-  their page boundaries differ; this is intentional.
-- A network connection is required for the first load of a surah or page.
-  Subsequent reads use the Hive cache.
-- If Quran.com is unavailable, the Madinah option falls back to Kemenag Arabic
-  text while keeping the selected typography.
-- Audio playback depends on the platform's network/audio support; web playback
-  may be subject to the CDN's CORS policy.
-- Challenge progress needs a signed-in Firebase user and a reachable Firestore
-  database. Recording your position never depends on the network; only the
-  leaderboard sync does.
-- Anonymous accounts are tied to the device/app installation. Use an email
-  account to keep challenge membership after reinstalling.
-- Screenshots in this README were captured from the running app (Chrome, mobile
-  viewport) in light and dark system themes.
+## Known Limitations
+
+1. **Initial Internet Connection**: Surah texts, verse details, and audio files require an active internet connection on the first access. Once loaded, surah data is cached locally in Hive for offline reading.
+2. **Audio Streaming**: Murottal audio playback is streamed on-demand per ayah and requires an active internet connection. On web, playback may depend on CDN CORS policies.
+3. **Location Permission for Prayer Times**:
+   - Calculating prayer times based on current GPS coordinates requires location permission (`ACCESS_FINE_LOCATION` on Android, `NSLocationWhenInUseUsageDescription` on iOS).
+   - If permission is denied or location services are disabled, the app seamlessly defaults to preset Indonesian city coordinates.
+4. **Android Exact Alarms & Battery Optimization**:
+   - Android 12+ requires `SCHEDULE_EXACT_ALARM` permission to deliver prayer time notifications at the exact minute.
+   - Heavy battery saver or vendor-specific background restrictions (e.g., Xiaomi MIUI, Samsung OneUI) may delay or suppress scheduled background alarms if background activity is restricted.
+5. **Firebase Group Challenges**:
+   - The reading challenge leaderboard requires internet connectivity to synchronize progress to Cloud Firestore. Local reading progress is saved offline immediately and uploaded as soon as connectivity is restored.
+   - Anonymous Firebase accounts are stored locally on the device; reinstalling the app or clearing device data generates a new user ID. Users should register with email and password to retain challenge memberships permanently.
+6. **iOS Widget Extension Signing**:
+   - The iOS Widget extension requires Apple Developer signing and manual App Group capability configuration in Xcode to enable data sharing between the main Runner app and the Widget target.

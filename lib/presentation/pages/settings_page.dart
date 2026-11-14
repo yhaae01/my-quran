@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/app_settings.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/mushaf_style_sheet.dart';
+import '../widgets/prayer_location_sheet.dart';
+import '../widgets/prayer_reminder_settings.dart';
 import '../widgets/quran_text.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -140,6 +142,34 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ),
+          const _SectionTitle('Waktu Shalat'),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.place_outlined),
+                  title: const Text('Lokasi perhitungan'),
+                  subtitle: Text(
+                    '${settings.prayer.resolvedLocationLabel} · '
+                    '${settings.prayer.locationMode.label}',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showPrayerLocationSheet(context),
+                ),
+                const Divider(),
+                const ListTile(
+                  leading: Icon(Icons.widgets_outlined),
+                  title: Text('Widget layar utama'),
+                  subtitle: Text(
+                    'Waktu shalat berikutnya dan hitung mundur ada di tab '
+                    'Shalat; pasang widgetnya dari launcher Android.',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          const PrayerReminderSettings(),
           const _SectionTitle('Penyimpanan & data'),
           Card(
             child: Column(

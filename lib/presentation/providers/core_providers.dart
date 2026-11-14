@@ -7,8 +7,12 @@ import 'package:hive/hive.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/network/api_client.dart';
 import '../../data/datasources/bookmark_local_data_source.dart';
+import '../../data/datasources/adhan_prayer_times_data_source.dart';
 import '../../data/datasources/challenge_remote_data_source.dart';
+import '../../data/datasources/device_location_data_source.dart';
 import '../../data/datasources/firebase_auth_data_source.dart';
+import '../../data/datasources/prayer_notification_data_source.dart';
+import '../../data/datasources/prayer_widget_data_source.dart';
 import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/datasources/quran_remote_data_source.dart';
 import '../../data/datasources/reading_progress_local_data_source.dart';
@@ -16,20 +20,29 @@ import '../../data/models/bookmark_model.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/bookmark_repository_impl.dart';
 import '../../data/repositories/challenge_repository_impl.dart';
+import '../../data/repositories/location_repository_impl.dart';
 import '../../data/repositories/mushaf_repository_impl.dart';
+import '../../data/repositories/prayer_reminder_repository_impl.dart';
+import '../../data/repositories/prayer_times_repository_impl.dart';
+import '../../data/repositories/prayer_widget_repository_impl.dart';
 import '../../data/repositories/quran_repository_impl.dart';
 import '../../data/repositories/reading_progress_repository_impl.dart';
 import '../../data/repositories/settings_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/bookmark_repository.dart';
 import '../../domain/repositories/challenge_repository.dart';
+import '../../domain/repositories/location_repository.dart';
 import '../../domain/repositories/mushaf_repository.dart';
+import '../../domain/repositories/prayer_reminder_repository.dart';
+import '../../domain/repositories/prayer_times_repository.dart';
+import '../../domain/repositories/prayer_widget_repository.dart';
 import '../../domain/repositories/quran_repository.dart';
 import '../../domain/repositories/reading_progress_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/usecases/auth_usecases.dart';
 import '../../domain/usecases/bookmark_usecases.dart';
 import '../../domain/usecases/challenge_usecases.dart';
+import '../../domain/usecases/prayer_usecases.dart';
 import '../../domain/usecases/quran_usecases.dart';
 import '../../domain/usecases/reading_progress_usecases.dart';
 
@@ -122,6 +135,74 @@ final Provider<BookmarkRepository> bookmarkRepositoryProvider =
 final Provider<SettingsRepository> settingsRepositoryProvider =
     Provider<SettingsRepository>(
       (ref) => SettingsRepositoryImpl(ref.watch(settingsBoxProvider)),
+    );
+
+final Provider<AdhanPrayerTimesDataSource> adhanPrayerTimesDataSourceProvider =
+    Provider<AdhanPrayerTimesDataSource>((ref) => AdhanPrayerTimesDataSource());
+
+final Provider<PrayerTimesRepository> prayerTimesRepositoryProvider =
+    Provider<PrayerTimesRepository>(
+      (ref) => PrayerTimesRepositoryImpl(
+        ref.watch(adhanPrayerTimesDataSourceProvider),
+      ),
+    );
+
+final Provider<DeviceLocationDataSource> deviceLocationDataSourceProvider =
+    Provider<DeviceLocationDataSource>((ref) => DeviceLocationDataSource());
+
+final Provider<LocationRepository> locationRepositoryProvider =
+    Provider<LocationRepository>(
+      (ref) =>
+          LocationRepositoryImpl(ref.watch(deviceLocationDataSourceProvider)),
+    );
+
+final Provider<PrayerNotificationDataSource>
+prayerNotificationDataSourceProvider = Provider<PrayerNotificationDataSource>(
+  (ref) => PrayerNotificationDataSource(),
+);
+
+final Provider<PrayerReminderRepository> prayerReminderRepositoryProvider =
+    Provider<PrayerReminderRepository>(
+      (ref) => PrayerReminderRepositoryImpl(
+        ref.watch(prayerNotificationDataSourceProvider),
+      ),
+    );
+
+final Provider<PrayerWidgetDataSource> prayerWidgetDataSourceProvider =
+    Provider<PrayerWidgetDataSource>((ref) => PrayerWidgetDataSource());
+
+final Provider<PrayerWidgetRepository> prayerWidgetRepositoryProvider =
+    Provider<PrayerWidgetRepository>(
+      (ref) =>
+          PrayerWidgetRepositoryImpl(ref.watch(prayerWidgetDataSourceProvider)),
+    );
+
+final Provider<GetPrayerSchedule> getPrayerScheduleProvider =
+    Provider<GetPrayerSchedule>(
+      (ref) => GetPrayerSchedule(ref.watch(prayerTimesRepositoryProvider)),
+    );
+
+final Provider<DetectCurrentLocation> detectCurrentLocationProvider =
+    Provider<DetectCurrentLocation>(
+      (ref) => DetectCurrentLocation(ref.watch(locationRepositoryProvider)),
+    );
+
+final Provider<RequestPrayerNotificationPermission>
+requestPrayerNotificationPermissionProvider =
+    Provider<RequestPrayerNotificationPermission>(
+      (ref) => RequestPrayerNotificationPermission(
+        ref.watch(prayerReminderRepositoryProvider),
+      ),
+    );
+
+final Provider<SyncPrayerReminders> syncPrayerRemindersProvider =
+    Provider<SyncPrayerReminders>(
+      (ref) => SyncPrayerReminders(ref.watch(prayerReminderRepositoryProvider)),
+    );
+
+final Provider<SyncPrayerWidget> syncPrayerWidgetProvider =
+    Provider<SyncPrayerWidget>(
+      (ref) => SyncPrayerWidget(ref.watch(prayerWidgetRepositoryProvider)),
     );
 
 final Provider<GetSurahs> getSurahsProvider = Provider<GetSurahs>(

@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/app_settings.dart';
+import '../../domain/entities/detected_location.dart';
 import '../../domain/entities/mushaf.dart';
+import '../../domain/entities/prayer.dart';
+import '../../domain/entities/prayer_city.dart';
+import '../../domain/entities/prayer_preferences.dart';
 import 'core_providers.dart';
 
 class SettingsNotifier extends Notifier<AppSettings> {
@@ -28,6 +32,66 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setThemeMode(AppThemeMode mode) {
     if (mode == state.themeMode) return;
     _update(state.copyWith(themeMode: mode));
+  }
+
+  void setPrayerNotificationsEnabled(bool enabled) {
+    if (enabled == state.prayer.notificationsEnabled) return;
+    _update(
+      state.copyWith(
+        prayer: state.prayer.copyWith(notificationsEnabled: enabled),
+      ),
+    );
+  }
+
+  void setPrayerEnabled(Prayer prayer, bool enabled) {
+    final next = {...state.prayer.enabledPrayers};
+    if (enabled) {
+      next.add(prayer);
+    } else {
+      next.remove(prayer);
+    }
+    if (next.length == state.prayer.enabledPrayers.length &&
+        next.containsAll(state.prayer.enabledPrayers)) {
+      return;
+    }
+    _update(
+      state.copyWith(prayer: state.prayer.copyWith(enabledPrayers: next)),
+    );
+  }
+
+  void setPrayerCity(String cityId) {
+    final city = prayerCityById(cityId);
+    if (city.id == state.prayer.cityId &&
+        state.prayer.locationMode == PrayerLocationMode.city) {
+      return;
+    }
+    _update(
+      state.copyWith(
+        prayer: state.prayer.copyWith(
+          cityId: city.id,
+          locationMode: PrayerLocationMode.city,
+        ),
+      ),
+    );
+  }
+
+  void setPrayerLocationMode(PrayerLocationMode mode) {
+    if (mode == state.prayer.locationMode) return;
+    _update(state.copyWith(prayer: state.prayer.copyWith(locationMode: mode)));
+  }
+
+  void setDevicePrayerLocation(DetectedLocation location) {
+    _update(
+      state.copyWith(
+        prayer: state.prayer.copyWith(
+          locationMode: PrayerLocationMode.automatic,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          timeZoneId: location.timeZoneId,
+          locationLabel: location.label,
+        ),
+      ),
+    );
   }
 
   void _update(AppSettings next) {

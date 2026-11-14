@@ -1,4 +1,5 @@
 import 'mushaf.dart';
+import 'prayer_preferences.dart';
 
 enum AppThemeMode {
   system,
@@ -24,6 +25,7 @@ class AppSettings {
     this.arabicFontSize = defaultArabicFontSize,
     this.mushafStyle = MushafStyle.kemenag,
     this.themeMode = AppThemeMode.system,
+    this.prayer = const PrayerPreferences(),
   });
 
   static const double minArabicFontSize = 20;
@@ -33,16 +35,19 @@ class AppSettings {
   final double arabicFontSize;
   final MushafStyle mushafStyle;
   final AppThemeMode themeMode;
+  final PrayerPreferences prayer;
 
   AppSettings copyWith({
     double? arabicFontSize,
     MushafStyle? mushafStyle,
     AppThemeMode? themeMode,
+    PrayerPreferences? prayer,
   }) {
     return AppSettings(
       arabicFontSize: arabicFontSize ?? this.arabicFontSize,
       mushafStyle: mushafStyle ?? this.mushafStyle,
       themeMode: themeMode ?? this.themeMode,
+      prayer: prayer ?? this.prayer,
     );
   }
 }
