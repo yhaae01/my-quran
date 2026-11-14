@@ -268,7 +268,7 @@ class _AyahFlow extends StatelessWidget {
   Widget build(BuildContext context) {
     final spans = <InlineSpan>[];
     for (final ayah in ayahs) {
-      spans.add(TextSpan(text: '${ayah.arabicFor(style)} '));
+      spans.add(TextSpan(text: '${ayah.arabicFor(style)}\u00A0'));
       spans.add(
         TextSpan(
           text: '﴿${toArabicDigits(ayah.number)}﴾ ',

@@ -20,6 +20,50 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
         children: [
+          const _SectionTitle('Tema'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Mode tampilan', style: theme.textTheme.bodyLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Terang, gelap, atau mengikuti pengaturan perangkat.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SegmentedButton<AppThemeMode>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: AppThemeMode.light,
+                        icon: Icon(Icons.light_mode_outlined),
+                        label: Text('Terang'),
+                      ),
+                      ButtonSegment(
+                        value: AppThemeMode.dark,
+                        icon: Icon(Icons.dark_mode_outlined),
+                        label: Text('Gelap'),
+                      ),
+                      ButtonSegment(
+                        value: AppThemeMode.system,
+                        icon: Icon(Icons.brightness_auto_outlined),
+                        label: Text('Sistem'),
+                      ),
+                    ],
+                    selected: {settings.themeMode},
+                    onSelectionChanged: (selection) => ref
+                        .read(settingsProvider.notifier)
+                        .setThemeMode(selection.first),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const _SectionTitle('Tampilan'),
           Card(
             child: Column(

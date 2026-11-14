@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/app_settings.dart';
 import '../../domain/entities/surah.dart';
 import '../providers/quran_providers.dart';
+import '../providers/settings_providers.dart';
 import '../widgets/common_views.dart';
 import '../widgets/surah_tile.dart';
 import 'surah_reader_page.dart';
@@ -18,6 +20,24 @@ class SurahListPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text("Al-Qur'an"),
         actions: [
+          IconButton(
+            tooltip: Theme.of(context).brightness == Brightness.dark
+                ? 'Mode terang'
+                : 'Mode gelap',
+            onPressed: () {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              ref
+                  .read(settingsProvider.notifier)
+                  .setThemeMode(
+                    isDark ? AppThemeMode.light : AppThemeMode.dark,
+                  );
+            },
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+            ),
+          ),
           IconButton(
             tooltip: 'Muat ulang daftar surah',
             onPressed: () => ref.read(surahListProvider.notifier).refresh(),

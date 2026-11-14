@@ -25,6 +25,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _update(state.copyWith(mushafStyle: style));
   }
 
+  void setThemeMode(AppThemeMode mode) {
+    if (mode == state.themeMode) return;
+    _update(state.copyWith(themeMode: mode));
+  }
+
   void _update(AppSettings next) {
     state = next;
     unawaited(ref.read(settingsRepositoryProvider).save(next));

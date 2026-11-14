@@ -1,9 +1,29 @@
 import 'mushaf.dart';
 
+enum AppThemeMode {
+  system,
+  light,
+  dark;
+
+  String get label => switch (this) {
+    AppThemeMode.system => 'Sistem',
+    AppThemeMode.light => 'Terang',
+    AppThemeMode.dark => 'Gelap',
+  };
+
+  static AppThemeMode fromName(String? name) {
+    return AppThemeMode.values.firstWhere(
+      (mode) => mode.name == name,
+      orElse: () => AppThemeMode.system,
+    );
+  }
+}
+
 class AppSettings {
   const AppSettings({
     this.arabicFontSize = defaultArabicFontSize,
     this.mushafStyle = MushafStyle.kemenag,
+    this.themeMode = AppThemeMode.system,
   });
 
   static const double minArabicFontSize = 20;
@@ -12,11 +32,17 @@ class AppSettings {
 
   final double arabicFontSize;
   final MushafStyle mushafStyle;
+  final AppThemeMode themeMode;
 
-  AppSettings copyWith({double? arabicFontSize, MushafStyle? mushafStyle}) {
+  AppSettings copyWith({
+    double? arabicFontSize,
+    MushafStyle? mushafStyle,
+    AppThemeMode? themeMode,
+  }) {
     return AppSettings(
       arabicFontSize: arabicFontSize ?? this.arabicFontSize,
       mushafStyle: mushafStyle ?? this.mushafStyle,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 }

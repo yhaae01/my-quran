@@ -1,11 +1,11 @@
 {
-    "name": "my_quran",
-    "short_name": "my_quran",
+    "name": "Al-Qur'an",
+    "short_name": "Al-Qur'an",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0F5B4E",
+    "theme_color": "#0F5B4E",
+    "description": "Aplikasi Al-Qur'an dengan terjemahan Indonesia, mushaf Madinah/Kemenag, dan penanda warna.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
