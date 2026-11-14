@@ -1,30 +1,50 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:my_quran/main.dart';
+import 'package:my_quran/domain/entities/ayah.dart';
+import 'package:my_quran/domain/entities/mushaf.dart';
+import 'package:my_quran/domain/entities/surah.dart';
+import 'package:my_quran/presentation/widgets/mushaf_page_widget.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('mushaf page shows the surah, ayah and page number', (
+    tester,
+  ) async {
+    const surah = Surah(
+      number: 1,
+      name: 'الفاتحة',
+      latinName: 'Al-Fatihah',
+      meaning: 'Pembukaan',
+      verseCount: 7,
+      revelation: 'Mekah',
+      description: '',
+    );
+    const page = MushafPage(
+      number: 1,
+      juz: 1,
+      style: MushafStyle.kemenag,
+      surahs: [surah],
+      ayahs: [
+        Ayah(
+          surahNumber: 1,
+          number: 1,
+          arabic: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ',
+          uthmani: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
+          translation:
+              'Dengan nama Allah Yang Maha Pengasih lagi Maha '
+              'Penyayang.',
+        ),
+      ],
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: MushafPageWidget(page: page)),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Hal. 1'), findsOneWidget);
+    expect(find.text('Juz 1'), findsOneWidget);
+    expect(find.textContaining('الفاتحة'), findsWidgets);
+    expect(find.textContaining('بِسْمِ اللّٰهِ'), findsOneWidget);
   });
 }
