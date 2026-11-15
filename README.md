@@ -146,6 +146,13 @@
 - **Random Daily Selection**: Automatic random selection helper that picks an authentic Hadith along with its title, number, Arabic text, and Indonesian translation.
 - **Scheduled at 05:00 AM**: Uses `flutter_local_notifications` with timezone awareness to fire every morning at 05:00 AM local time, titled "Hadis Hari Ini" with the selected Hadith translation as the notification body and expandable big text.
 
+### 9. Interactive Hijri Calendar View
+- **Full Monthly Grid**: Complete 7-column calendar grid aligning weeks from Ahad through Sabtu, displaying Hijri day numbers alongside corresponding Gregorian calendar dates.
+- **Bi-Directional Navigation**: Navigate forward and backward across Hijri months via next/previous buttons or intuitive horizontal swipe gestures, with automatic year rollover.
+- **Today Highlight & Selection**: Distinct highlighted pill styling for the current day and instant interactive selection card detailing the selected date's full Hijri and Gregorian dates.
+- **Islamic Observances & Sunnah Fasting**: Automatic badges and indicators for Ayyamul Bidh (13, 14, 15), Monday/Thursday sunnah fasting, Ramadhan, Hari Raya Idul Fitri & Idul Adha, Hari Arafah, and Asyura.
+- **Direct Dashboard Integration**: Tappable dashboard calendar card, AppBar icon shortcut, and "Jelajahi" menu tile.
+
 ---
 
 ## Tech Stack
@@ -398,6 +405,7 @@ flutter test
 - `test/hijri_utils_test.dart`: Known Umm al-Qura conversion, day rollover and label formatting.
 - `test/bookmark_progress_independence_test.dart`: Saving bookmarks never writes challenge progress.
 - `test/hadith_test.dart`: Hadith entity and model serialization, random selection helper with empty fallback, and 05:00 AM daily notification scheduling.
+- `test/hijri_calendar_page_test.dart`: Interactive monthly Hijri calendar rendering, weekday alignment, swipe/button navigation, and today highlight.
 
 ---
 

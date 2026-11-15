@@ -8,6 +8,7 @@ import '../../domain/entities/reading_progress.dart';
 import '../providers/bookmark_providers.dart';
 import '../providers/reading_progress_providers.dart';
 import 'challenge_page.dart';
+import 'hijri_calendar_page.dart';
 import 'settings_page.dart';
 import 'surah_list_page.dart';
 import 'surah_reader_page.dart';
@@ -54,6 +55,15 @@ class DashboardPage extends ConsumerWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Kalender Hijriah',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HijriCalendarPage(),
+              ),
+            ),
+            icon: const Icon(Icons.calendar_month_outlined),
+          ),
           IconButton(
             tooltip: 'Pengaturan',
             onPressed: () => Navigator.of(context).push(
@@ -113,6 +123,18 @@ class DashboardPage extends ConsumerWidget {
                 ),
                 const Divider(),
                 _FeatureTile(
+                  icon: Icons.calendar_month_outlined,
+                  title: 'Kalender Hijriah',
+                  subtitle:
+                      'Kalender bulanan, konversi masehi, dan puasa sunnah',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HijriCalendarPage(),
+                    ),
+                  ),
+                ),
+                const Divider(),
+                _FeatureTile(
                   icon: Icons.groups_outlined,
                   title: 'Tantangan Kelompok',
                   subtitle: 'Baca bersama teman dan lihat progres',
@@ -169,6 +191,7 @@ class DashboardPage extends ConsumerWidget {
 }
 
 /// Today's Hijri date, shown beside the Gregorian date at the top of Beranda.
+/// Tapping the card opens the full interactive monthly Hijri calendar.
 class _HijriCalendarCard extends StatelessWidget {
   const _HijriCalendarCard({required this.now});
 
@@ -181,60 +204,82 @@ class _HijriCalendarCard extends StatelessWidget {
     final hijri = HijriDay.fromDate(now);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [scheme.primaryContainer, scheme.secondaryContainer],
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const HijriCalendarPage()),
+        ),
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      scheme.primaryContainer,
+                      scheme.secondaryContainer,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: scheme.secondary.withValues(alpha: 0.35),
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: scheme.secondary.withValues(alpha: 0.35),
+                child: Icon(
+                  Icons.nightlight_outlined,
+                  color: scheme.onPrimaryContainer,
                 ),
               ),
-              child: Icon(
-                Icons.nightlight_outlined,
-                color: scheme.onPrimaryContainer,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'KALENDER HIJRIAH',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      hijri.label,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      formatPrayerDate(now),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'KALENDER HIJRIAH',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    hijri.label,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    formatPrayerDate(now),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: scheme.primary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
