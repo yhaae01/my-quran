@@ -45,6 +45,11 @@ import '../../domain/usecases/challenge_usecases.dart';
 import '../../domain/usecases/prayer_usecases.dart';
 import '../../domain/usecases/quran_usecases.dart';
 import '../../domain/usecases/reading_progress_usecases.dart';
+import '../../data/datasources/hadith_local_data_source.dart';
+import '../../data/datasources/hadith_notification_data_source.dart';
+import '../../data/repositories/hadith_repository_impl.dart';
+import '../../domain/repositories/hadith_repository.dart';
+import '../../domain/usecases/hadith_usecases.dart';
 
 final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
   final client = ApiClient();
@@ -63,6 +68,10 @@ final Provider<Box<dynamic>> quranCacheBoxProvider = Provider<Box<dynamic>>(
 
 final Provider<Box<dynamic>> settingsBoxProvider = Provider<Box<dynamic>>(
   (ref) => Hive.box<dynamic>(HiveBoxes.settings),
+);
+
+final Provider<Box<dynamic>> hadithCacheBoxProvider = Provider<Box<dynamic>>(
+  (ref) => Hive.box<dynamic>(HiveBoxes.hadithCache),
 );
 
 /// Set by `main()` once `Firebase.initializeApp()` succeeds. The challenge
@@ -314,4 +323,40 @@ final Provider<SaveReadingProgress> saveReadingProgressProvider =
     Provider<SaveReadingProgress>(
       (ref) =>
           SaveReadingProgress(ref.watch(readingProgressRepositoryProvider)),
+    );
+
+final Provider<HadithLocalDataSource> hadithLocalDataSourceProvider =
+    Provider<HadithLocalDataSource>(
+      (ref) => HadithLocalDataSource(
+        bundle: rootBundle,
+        box: ref.watch(hadithCacheBoxProvider),
+      ),
+    );
+
+final Provider<HadithRepository> hadithRepositoryProvider =
+    Provider<HadithRepository>(
+      (ref) => HadithRepositoryImpl(ref.watch(hadithLocalDataSourceProvider)),
+    );
+
+final Provider<HadithNotificationDataSource>
+hadithNotificationDataSourceProvider = Provider<HadithNotificationDataSource>(
+  (ref) => HadithNotificationDataSource(),
+);
+
+final Provider<GetRandomHadith> getRandomHadithProvider =
+    Provider<GetRandomHadith>(
+      (ref) => GetRandomHadith(ref.watch(hadithRepositoryProvider)),
+    );
+
+final Provider<GetHadiths> getHadithsProvider = Provider<GetHadiths>(
+  (ref) => GetHadiths(ref.watch(hadithRepositoryProvider)),
+);
+
+final Provider<ScheduleDailyHadithNotification>
+scheduleDailyHadithNotificationProvider =
+    Provider<ScheduleDailyHadithNotification>(
+      (ref) => ScheduleDailyHadithNotification(
+        repository: ref.watch(hadithRepositoryProvider),
+        notificationDataSource: ref.watch(hadithNotificationDataSourceProvider),
+      ),
     );

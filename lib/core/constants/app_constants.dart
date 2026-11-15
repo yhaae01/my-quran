@@ -12,16 +12,22 @@ abstract final class ApiEndpoints {
   static String uthmaniVerses(int chapterNumber) =>
       '$quranComBase/verses/by_chapter/$chapterNumber'
       '?fields=text_uthmani&per_page=300&page=1';
+
+  /// Hadith API dataset from renomureza/hadis-api-id.
+  static const String hadithApiBase =
+      'https://raw.githubusercontent.com/renomureza/hadis-api-id/main/src/data';
 }
 
 abstract final class HiveBoxes {
   static const String bookmarks = 'bookmarks';
   static const String quranCache = 'quran_cache';
   static const String settings = 'settings';
+  static const String hadithCache = 'hadith_cache';
 }
 
 abstract final class AppAssets {
   static const String mushafPageIndex = 'assets/data/mushaf_page_index.json';
+  static const String hadiths = 'assets/data/hadiths.json';
 }
 
 abstract final class CacheTtl {

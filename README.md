@@ -140,6 +140,12 @@
   - **iOS WidgetKit**: SwiftUI medium & large widgets with the same layout: Hijri date, highlighted next prayer with a `Text(timer)` countdown, and all five times for the day.
   - **Day-Aware Payload**: Flutter sends a week of prayer times with a preformatted Hijri date for each day, so the widget rolls over to the correct row and date even when the app has not been opened.
 
+### 8. Daily 5:00 AM Hadith Notification
+- **Curated Hadith Dataset**: Sourced from [renomureza/hadis-api-id](https://github.com/renomureza/hadis-api-id) across the 9 major Hadith compilers (Bukhari, Muslim, Abu Dawud, Tirmidzi, Nasai, Ibnu Majah, Malik, Ahmad, Darimi).
+- **Offline & Cached**: Bundled offline JSON asset (`assets/data/hadiths.json`) plus Hive persistence (`hadith_cache`) so notifications and readings work 100% offline.
+- **Random Daily Selection**: Automatic random selection helper that picks an authentic Hadith along with its title, number, Arabic text, and Indonesian translation.
+- **Scheduled at 05:00 AM**: Uses `flutter_local_notifications` with timezone awareness to fire every morning at 05:00 AM local time, titled "Hadis Hari Ini" with the selected Hadith translation as the notification body and expandable big text.
+
 ---
 
 ## Tech Stack
@@ -391,12 +397,14 @@ flutter test
 - `test/double_back_exit_test.dart`: First back press warning and second-press exit.
 - `test/hijri_utils_test.dart`: Known Umm al-Qura conversion, day rollover and label formatting.
 - `test/bookmark_progress_independence_test.dart`: Saving bookmarks never writes challenge progress.
+- `test/hadith_test.dart`: Hadith entity and model serialization, random selection helper with empty fallback, and 05:00 AM daily notification scheduling.
 
 ---
 
 ## Data Sources & Credits
 
 - **Quran Text, Translation & Audio**: [equran.id API v2](https://equran.id/apidev/v2)
+- **Hadith Dataset**: [renomureza/hadis-api-id](https://github.com/renomureza/hadis-api-id) (Indonesian translation of 9 Hadith books)
 - **Madinah Uthmani Text**: [Quran.com API v4](https://api-docs.quran.com/)
 - **Madinah Page Metadata**: [Al Quran Cloud](https://alquran.cloud/api)
 - **Kemenag Page Index**: [quran-json-kemenag](https://github.com/dyazincahya/quran-json-kemenag)

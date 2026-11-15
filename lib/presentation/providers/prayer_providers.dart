@@ -55,6 +55,13 @@ class PrayerSyncNotifier extends AsyncNotifier<PrayerSchedule?> {
     } catch (error) {
       debugPrint('Widget shalat tidak tersinkron: $error');
     }
+    try {
+      await ref.read(scheduleDailyHadithNotificationProvider)(
+        timeZoneId: schedule.timeZoneId,
+      );
+    } catch (error) {
+      debugPrint('Notifikasi hadis harian tidak tersinkron: $error');
+    }
   }
 }
 

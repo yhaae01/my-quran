@@ -19,6 +19,7 @@ Future<void> main() async {
     Hive.openBox<BookmarkModel>(HiveBoxes.bookmarks),
     Hive.openBox<dynamic>(HiveBoxes.quranCache),
     Hive.openBox<dynamic>(HiveBoxes.settings),
+    Hive.openBox<dynamic>(HiveBoxes.hadithCache),
   ]);
 
   // Configured by `flutterfire configure`: google-services.json on Android and
