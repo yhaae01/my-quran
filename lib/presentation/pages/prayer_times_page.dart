@@ -422,8 +422,9 @@ class _WidgetCard extends ConsumerWidget {
             const SizedBox(height: 6),
             Text(
               supported.value == true
-                  ? 'Tampilkan waktu shalat berikutnya beserta hitungan '
-                        'mundurnya di layar utama.'
+                  ? 'Tampilkan lima waktu shalat hari ini, shalat berikutnya '
+                        'dengan hitung mundur adzan, dan tanggal Hijriah di '
+                        'layar utama.'
                   : 'Widget waktu shalat tersedia di Android. Pasang dari '
                         'daftar widget launcher setelah data diperbarui.',
               style: theme.textTheme.bodySmall?.copyWith(

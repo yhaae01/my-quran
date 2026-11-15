@@ -8,6 +8,11 @@ import 'core_providers.dart';
 
 /// Furthest position reached on this device. Kept locally and mirrored to every
 /// reading group the signed-in reader has joined.
+///
+/// This is the only source of challenge progress: personal bookmarks live in
+/// their own Hive box and never write here, so saving, editing or deleting a
+/// bookmark cannot change the real-time leaderboard. Opening a bookmark also
+/// skips the initial auto-jump report (see `SurahReaderPage.reportInitialAyah`).
 class ReadingProgressNotifier extends Notifier<ReadingProgress?> {
   Timer? _syncTimer;
   ReadingProgress? _pending;

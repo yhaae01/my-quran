@@ -6,6 +6,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/error/failure.dart';
+import '../../core/utils/hijri_utils.dart';
 import '../../domain/entities/prayer.dart';
 import '../../domain/entities/prayer_preferences.dart';
 
@@ -86,16 +87,38 @@ class PrayerWidgetDataSource {
       'location': schedule.locationLabel,
       'timeZoneId': schedule.timeZoneId,
       'updatedAt': schedule.calculatedAt.toUtc().toIso8601String(),
-      'moments': [
-        for (final moment in schedule.moments)
+      // The widget needs today's five times to draw its full row, and the
+      // native side picks the right day when the app is not opened.
+      'hijriDate': formatHijriDate(schedule.today.date),
+      'days': [
+        for (final day in schedule.days)
           {
-            'prayer': moment.prayer.name,
-            'label': moment.prayer.label,
-            'epochMs': moment.instant.millisecondsSinceEpoch,
-            'time': _clock(moment, location),
+            'date': _dateKey(day.date),
+            'hijriDate': formatHijriDate(day.date),
+            'prayers': [
+              for (final moment in day.moments) _momentJson(moment, location),
+            ],
           },
       ],
+      'moments': [
+        for (final moment in schedule.moments) _momentJson(moment, location),
+      ],
     };
+  }
+
+  Map<String, Object?> _momentJson(PrayerMoment moment, tz.Location location) {
+    return {
+      'prayer': moment.prayer.name,
+      'label': moment.prayer.label,
+      'epochMs': moment.instant.millisecondsSinceEpoch,
+      'time': _clock(moment, location),
+    };
+  }
+
+  String _dateKey(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 
   String _clock(PrayerMoment moment, tz.Location location) {

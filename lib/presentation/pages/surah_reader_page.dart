@@ -26,6 +26,7 @@ class SurahReaderPage extends ConsumerWidget {
     required this.surahNumber,
     this.initialSurahName,
     this.initialVerseNumber,
+    this.reportInitialAyah = true,
   });
 
   final int surahNumber;
@@ -33,6 +34,13 @@ class SurahReaderPage extends ConsumerWidget {
 
   /// When provided, the reader opens at this verse and highlights it.
   final int? initialVerseNumber;
+
+  /// Whether landing on [initialVerseNumber] counts as reading progress.
+  ///
+  /// Opening a personal bookmark passes `false`: saved references stay
+  /// independent from the real-time reading challenge, which must only follow
+  /// the reader's own active position. Scrolling afterwards is still tracked.
+  final bool reportInitialAyah;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -135,6 +143,7 @@ class SurahReaderPage extends ConsumerWidget {
                 style: style,
                 topPadding: immersive ? 58 : 0,
                 target: initialVerseNumber,
+                reportInitialAyah: reportInitialAyah,
                 onAyahVisible: (ayah) {
                   unawaited(
                     ref
@@ -183,12 +192,17 @@ class _AyahList extends StatefulWidget {
     required this.style,
     required this.target,
     required this.onAyahVisible,
+    this.reportInitialAyah = true,
     this.topPadding = 0,
   });
 
   final SurahDetail detail;
   final MushafStyle style;
   final int? target;
+
+  /// When false, the auto-jump to [target] is not reported as progress, so a
+  /// bookmark tap cannot move the challenge leaderboard.
+  final bool reportInitialAyah;
 
   /// Leaves room for the floating immersive-mode exit button.
   final double topPadding;
@@ -201,6 +215,7 @@ class _AyahList extends StatefulWidget {
 class _AyahListState extends State<_AyahList> {
   final ItemPositionsListener _positions = ItemPositionsListener.create();
   int? _lastReportedAyah;
+  bool _skippedInitialAyah = false;
 
   @override
   void initState() {
@@ -230,6 +245,14 @@ class _AyahListState extends State<_AyahList> {
     }
     final ayah = widget.detail.ayahs[firstVisible - 1];
     if (_lastReportedAyah == ayah.number) return;
+    if (!widget.reportInitialAyah &&
+        !_skippedInitialAyah &&
+        ayah.number == widget.target) {
+      // The bookmark jump itself is a personal reference, not reading progress.
+      _skippedInitialAyah = true;
+      _lastReportedAyah = ayah.number;
+      return;
+    }
     _lastReportedAyah = ayah.number;
     widget.onAyahVisible(ayah);
   }

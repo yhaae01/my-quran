@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/hijri_utils.dart';
+import '../../core/utils/prayer_utils.dart';
 import '../../domain/entities/bookmark.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../providers/bookmark_providers.dart';
@@ -29,6 +31,7 @@ class DashboardPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final progress = ref.watch(readingProgressProvider);
     final bookmarks = ref.watch(bookmarksProvider).value ?? const <Bookmark>[];
+    final now = DateTime.now();
 
     return Scaffold(
       appBar: AppBar(
@@ -63,6 +66,8 @@ class DashboardPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
         children: [
+          _HijriCalendarCard(now: now),
+          const SizedBox(height: 14),
           _ContinueReadingCard(
             progress: progress,
             onTap: () => _openReader(context, progress),
@@ -157,6 +162,79 @@ class DashboardPage extends ConsumerWidget {
           surahNumber: progress.surahNumber,
           initialSurahName: progress.surahName,
           initialVerseNumber: progress.ayahNumber,
+        ),
+      ),
+    );
+  }
+}
+
+/// Today's Hijri date, shown beside the Gregorian date at the top of Beranda.
+class _HijriCalendarCard extends StatelessWidget {
+  const _HijriCalendarCard({required this.now});
+
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final hijri = HijriDay.fromDate(now);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [scheme.primaryContainer, scheme.secondaryContainer],
+                ),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: scheme.secondary.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Icon(
+                Icons.nightlight_outlined,
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'KALENDER HIJRIAH',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    hijri.label,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    formatPrayerDate(now),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

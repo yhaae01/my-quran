@@ -1,10 +1,15 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/text_utils.dart';
 import '../../domain/entities/ayah.dart';
+import '../../domain/entities/bookmark.dart';
 import '../../domain/entities/mushaf.dart';
 import '../../domain/entities/surah.dart';
+import '../providers/bookmark_providers.dart';
+import 'bookmark_color_sheet.dart';
 import 'quran_text.dart';
 
 class MushafPageWidget extends StatelessWidget {
@@ -205,6 +210,7 @@ class _PageContent extends StatelessWidget {
       children.add(
         _AyahFlow(
           ayahs: entry.value,
+          surah: surah,
           style: page.style,
           palette: palette,
           fontSize: fontSize,
@@ -258,43 +264,110 @@ class _SurahHeading extends StatelessWidget {
   }
 }
 
-class _AyahFlow extends StatelessWidget {
+/// Flowing text of one surah's verses on the page.
+///
+/// Every verse is its own tappable [TextSpan] so the reader can tap an ayah
+/// directly, without leaving the mushaf, to open its bookmark action sheet.
+/// Bookmarked verses get a soft tinted background in their category colour.
+class _AyahFlow extends ConsumerStatefulWidget {
   const _AyahFlow({
     required this.ayahs,
+    required this.surah,
     required this.style,
     required this.palette,
     required this.fontSize,
   });
 
   final List<Ayah> ayahs;
+  final Surah? surah;
   final MushafStyle style;
   final _MushafPalette palette;
   final double fontSize;
 
   @override
+  ConsumerState<_AyahFlow> createState() => _AyahFlowState();
+}
+
+class _AyahFlowState extends ConsumerState<_AyahFlow> {
+  final Map<int, TapGestureRecognizer> _recognizers = {};
+
+  TapGestureRecognizer _recognizerFor(Ayah ayah) {
+    return _recognizers.putIfAbsent(ayah.number, () {
+      return TapGestureRecognizer()..onTap = () => _openActions(ayah);
+    });
+  }
+
+  void _openActions(Ayah ayah) {
+    final surah = widget.surah;
+    if (surah == null) return;
+
+    final existing = ref.read(
+      bookmarkAtProvider((surah: ayah.surahNumber, verse: ayah.number)),
+    );
+    showBookmarkColorSheet(
+      context,
+      surah: surah,
+      ayah: ayah,
+      existing: existing,
+      style: widget.style,
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final recognizer in _recognizers.values) {
+      recognizer.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bookmarks = ref.watch(bookmarksProvider).value ?? const <Bookmark>[];
+    final colorsByVerse = <int, BookmarkColor>{
+      for (final bookmark in bookmarks)
+        if (widget.ayahs.isNotEmpty &&
+            bookmark.surahNumber == widget.ayahs.first.surahNumber)
+          bookmark.verseNumber: bookmark.color,
+    };
+
     final spans = <InlineSpan>[];
-    for (final ayah in ayahs) {
-      spans.add(TextSpan(text: '${ayah.arabicFor(style)}\u00A0'));
+    for (final ayah in widget.ayahs) {
+      final color = colorsByVerse[ayah.number];
+      spans.add(
+        TextSpan(
+          text: '${ayah.arabicFor(widget.style)}\u00A0',
+          recognizer: _recognizerFor(ayah),
+          mouseCursor: SystemMouseCursors.click,
+          style: color == null
+              ? null
+              : TextStyle(backgroundColor: color.color.withValues(alpha: 0.16)),
+        ),
+      );
       spans.add(
         TextSpan(
           text: '﴿${toArabicDigits(ayah.number)}﴾ ',
-          style: TextStyle(fontSize: fontSize * 0.72, color: palette.accent),
+          recognizer: _recognizerFor(ayah),
+          mouseCursor: SystemMouseCursors.click,
+          style: TextStyle(
+            fontSize: widget.fontSize * 0.72,
+            color: color?.color ?? widget.palette.accent,
+          ),
         ),
       );
     }
 
     return Padding(
-      padding: EdgeInsets.only(bottom: fontSize * 0.45),
+      padding: EdgeInsets.only(bottom: widget.fontSize * 0.45),
       child: Text.rich(
         TextSpan(children: spans),
         textDirection: TextDirection.rtl,
         textAlign: TextAlign.justify,
         style: TextStyle(
-          fontFamily: style.fontFamily,
-          fontSize: fontSize,
+          fontFamily: widget.style.fontFamily,
+          fontSize: widget.fontSize,
           height: 2,
-          color: palette.ink,
+          color: widget.palette.ink,
         ),
       ),
     );

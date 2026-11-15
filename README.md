@@ -84,8 +84,9 @@
 ## Core Features
 
 ### 1. Dashboard & Immersive Reading
-- **Dashboard-First Workflow**: The **Beranda** tab shows a continue-reading card with Qur'an completion percentage, two primary reading modes (Baca per Ayat and Mushaf), and shortcuts to prayer times, group challenges and bookmarks. Settings is reachable from the dashboard app bar.
+- **Dashboard-First Workflow**: The **Beranda** tab opens with a Hijri calendar card (Umm al-Qura) beside the Gregorian date, then a continue-reading card with Qur'an completion percentage, two primary reading modes (Baca per Ayat and Mushaf), and shortcuts to prayer times, group challenges and bookmarks. Settings is reachable from the dashboard app bar.
 - **Clean Five-Tab Navigation**: Beranda, Surah, Mushaf, Shalat and Penanda — fewer tabs and no duplicated settings destination.
+- **Safe Exit**: A double back press leaves the app. The first press shows "Tekan sekali lagi untuk keluar aplikasi" and the app only closes if the second press follows within 2 seconds.
 - **Landscape Layout**: In landscape the bottom bar is replaced by a slim `NavigationRail`, freeing vertical space for reading.
 - **Immersive Reader Mode**: Toggle from the reader app bar, or rotate to landscape to activate it automatically. The app bar and mushaf footer disappear; a floating control restores them and the mushaf keeps a compact page badge with previous/next buttons.
 - **Reading Preferences**: Arabic text size and translation visibility are persisted settings. The font slider scales both the ayah list and the page-by-page mushaf.
@@ -102,14 +103,16 @@
   - **Madinah Mushaf**: Classic Uthmani script based on King Fahd Complex standards.
   - **Kemenag Mushaf**: Standard Indonesian layout (Mushaf Standar Indonesia) verified by the Ministry of Religious Affairs (Kemenag).
 - **Faithful Page Layouts**: Exactly 604 pages rendered via high-performance horizontal paging (`PageView`), complete with juz markers, surah heading banners, basmalah calligraphies, and Arabic page numbering.
+- **Tap-to-Bookmark Ayat**: Tap any ayah directly in the mushaf page to open its action sheet with the verse preview, translation and category emblems. Saved verses are tinted on the page in their category colour.
 - **Immersive Landscape Paging**: In landscape the reader hides its chrome and shows a floating page badge with previous/next controls.
 - **Offline Asset Index**: Pre-indexed surah and ayah page boundaries bundled in JSON format for instantaneous, offline page resolution.
 
 ### 4. Informative Color-Coded Bookmarks
-- **Four Categorization Colors**: Mark verses with **Red, Green, Yellow, or Blue** tags to categorize recitations (e.g., daily target, memorization, reflection, favorite verses).
-- **Informative Cards**: Every card shows the surah name and ayah number (e.g. "Surah Al-Baqarah - Ayat 255"), the color tag, a two-line Arabic snippet with its translation, and the date/time it was saved.
+- **Four Categorization Emblems**: Mark verses with **Red, Green, Yellow, or Blue** ribbon badges. The gradient emblem replaces plain colour dots in the picker, filter chips, group headers, ayah tiles and saved cards.
+- **Informative Cards**: Every card shows the surah name and ayah number (e.g. "Surah Al-Baqarah - Ayat 255"), the category emblem, a two-line Arabic snippet with its translation, and the date/time it was saved.
 - **Jump & Delete**: Tap a card to jump straight to the exact ayah, or use the delete button on the card (swipe-to-delete with Undo is also supported).
-- **Filtering**: Filter by color tag; counts per color are shown in the filter bar.
+- **Filtering**: Filter by category; counts per category are shown in the filter bar.
+- **Independent From Challenges**: Bookmarks live in their own local store and never write reading progress. Opening a bookmark also skips the initial progress report, so personal references cannot move the real-time challenge leaderboard.
 - **Resilient Local Storage**: Backed by Hive with a custom binary adapter. Missing fields are repaired with readable fallbacks and unreadable records are skipped so a damaged entry can never crash the list.
 
 ### 5. Dark & Light Theme
@@ -133,8 +136,9 @@
 - **7-Day Rolling Schedule**: Computes Subuh, Dzuhur, Ashar, Maghrib, and Isya timings with countdown timers.
 - **Timely Notifications**: Scheduled local alerts with custom Islamic notification channels and wake-up alarms (`flutter_local_notifications`).
 - **Home Screen Widgets (`home_widget`)**:
-  - **Android App Widget**: Native 4x2 / 2x2 widget displaying next prayer name, time, location, and countdown Chronometer.
-  - **iOS WidgetKit**: SwiftUI small & medium widgets displaying upcoming prayer time and countdown timer.
+  - **Android App Widget**: Native 4x3 widget showing the location and Hijri date, the next prayer with a live countdown Chronometer, and a row with all five prayer times. The upcoming prayer is highlighted in gold.
+  - **iOS WidgetKit**: SwiftUI medium & large widgets with the same layout: Hijri date, highlighted next prayer with a `Text(timer)` countdown, and all five times for the day.
+  - **Day-Aware Payload**: Flutter sends a week of prayer times with a preformatted Hijri date for each day, so the widget rolls over to the correct row and date even when the app has not been opened.
 
 ---
 
@@ -150,6 +154,7 @@
 | **Location Services** | `geolocator` | GPS coordinate resolution for local prayer times |
 | **Notifications** | `flutter_local_notifications`, `timezone` | Exact alarm scheduling and adhan alerts |
 | **Home Widgets** | `home_widget` | Bridge for Android AppWidget and iOS WidgetKit |
+| **Hijri Calendar** | `hijri_date` | Umm al-Qura Gregorian↔Hijri conversion for the dashboard and widget |
 | **Audio Playback** | `just_audio` | Background audio streaming for per-ayah recitations |
 | **Networking** | `http` | Resilient JSON HTTP client with caching & error handling |
 | **Typography** | Amiri Quran & Scheherazade New | Bundled SIL-licensed authentic Arabic typefaces |
@@ -381,7 +386,11 @@ flutter test
 - `test/mushaf_asset_test.dart`: Bundled mushaf index asset sanity checks.
 - `test/settings_storage_test.dart`: Persisted reading and theme preferences.
 - `test/theme_switcher_test.dart`: Reactive theme switching and persistence.
-- `test/widget_test.dart`: Mushaf page rendering and navigation widget test.
+- `test/widget_test.dart`: Mushaf page rendering plus tapping an ayah to open its bookmark sheet.
+- `test/auth_form_test.dart`: Email/password form, registration confirmation, validation messages and eye toggles.
+- `test/double_back_exit_test.dart`: First back press warning and second-press exit.
+- `test/hijri_utils_test.dart`: Known Umm al-Qura conversion, day rollover and label formatting.
+- `test/bookmark_progress_independence_test.dart`: Saving bookmarks never writes challenge progress.
 
 ---
 

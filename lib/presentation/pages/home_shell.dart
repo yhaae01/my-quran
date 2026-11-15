@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/prayer_providers.dart';
+import '../widgets/double_back_exit.dart';
 import 'bookmarks_page.dart';
 import 'dashboard_page.dart';
 import 'mushaf_reader_page.dart';
@@ -95,46 +96,50 @@ class _HomeShellState extends ConsumerState<HomeShell>
         MediaQuery.orientationOf(context) == Orientation.landscape;
 
     if (!isLandscape) {
-      return Scaffold(
-        body: IndexedStack(index: _selectedIndex, children: _pages),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: _selectTab,
-          destinations: _destinations,
+      return DoubleBackExit(
+        child: Scaffold(
+          body: IndexedStack(index: _selectedIndex, children: _pages),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _selectTab,
+            destinations: _destinations,
+          ),
         ),
       );
     }
 
     // Landscape: a slim rail keeps the page area free instead of reserving
     // bottom space that the reader needs.
-    return Scaffold(
-      body: Row(
-        children: [
-          SafeArea(
-            right: false,
-            child: NavigationRail(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: _selectTab,
-              labelType: NavigationRailLabelType.none,
-              groupAlignment: -0.9,
-              backgroundColor: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerLow,
-              destinations: [
-                for (final destination in _destinations)
-                  NavigationRailDestination(
-                    icon: destination.icon,
-                    selectedIcon: destination.selectedIcon,
-                    label: Text(destination.label),
-                  ),
-              ],
+    return DoubleBackExit(
+      child: Scaffold(
+        body: Row(
+          children: [
+            SafeArea(
+              right: false,
+              child: NavigationRail(
+                selectedIndex: _selectedIndex,
+                onDestinationSelected: _selectTab,
+                labelType: NavigationRailLabelType.none,
+                groupAlignment: -0.9,
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerLow,
+                destinations: [
+                  for (final destination in _destinations)
+                    NavigationRailDestination(
+                      icon: destination.icon,
+                      selectedIcon: destination.selectedIcon,
+                      label: Text(destination.label),
+                    ),
+                ],
+              ),
             ),
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(
-            child: IndexedStack(index: _selectedIndex, children: _pages),
-          ),
-        ],
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: IndexedStack(index: _selectedIndex, children: _pages),
+            ),
+          ],
+        ),
       ),
     );
   }

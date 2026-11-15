@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="prayer_widget_description">Waktu shalat berikutnya dan hitung mundur adzan</string>
+    <string name="prayer_widget_description">Lima waktu shalat, shalat berikutnya, hitung mundur adzan, dan tanggal Hijriah</string>
     <string name="prayer_channel_name">Waktu Shalat</string>
     <string name="prayer_channel_description">Pengingat saat waktu shalat tiba</string>
 </resources>

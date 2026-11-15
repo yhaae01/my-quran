@@ -6,6 +6,7 @@ import '../../core/utils/text_utils.dart';
 import '../../domain/entities/bookmark.dart';
 import '../providers/bookmark_providers.dart';
 import '../providers/settings_providers.dart';
+import '../widgets/bookmark_badge.dart';
 import '../widgets/common_views.dart';
 import 'surah_reader_page.dart';
 
@@ -155,14 +156,7 @@ class _FilterBar extends StatelessWidget {
           ),
           for (final color in BookmarkColor.values)
             ChoiceChip(
-              avatar: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: color.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              avatar: BookmarkBadge(color: color, size: 14, showShadow: false),
               label: Text('${color.label} (${counts[color] ?? 0})'),
               selected: selected == color,
               onSelected: (_) => onChanged(selected == color ? null : color),
@@ -183,22 +177,31 @@ class _GroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 14, 6, 8),
+      padding: const EdgeInsets.fromLTRB(6, 18, 6, 8),
       child: Row(
         children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: color.color,
-              shape: BoxShape.circle,
+          BookmarkBadge(color: color, size: 17),
+          const SizedBox(width: 10),
+          Text(
+            color.label,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
             ),
           ),
           const SizedBox(width: 8),
+          Expanded(
+            child: Divider(
+              color: color.color.withValues(alpha: 0.28),
+              indent: 2,
+              endIndent: 4,
+            ),
+          ),
+          const SizedBox(width: 4),
           Text(
-            '${color.label} • $count',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+            '$count ayat',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -216,28 +219,22 @@ class _ColorTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      padding: const EdgeInsets.fromLTRB(7, 3, 10, 3),
       decoration: BoxDecoration(
-        color: color.color.withValues(alpha: 0.14),
+        color: color.color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.color.withValues(alpha: 0.45)),
+        border: Border.all(color: color.color.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: color.color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 5),
+          BookmarkBadge(color: color, size: 11, showShadow: false),
+          const SizedBox(width: 6),
           Text(
             color.label,
             style: theme.textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
               color: theme.colorScheme.onSurface,
             ),
           ),
@@ -281,116 +278,116 @@ class _BookmarkCard extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => _openReader(context),
-            // IntrinsicHeight bounds the stretch-aligned color strip, which
-            // would otherwise receive an infinite height inside a ListView.
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(width: 6, color: bookmark.color.color),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 10, 6, 14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    bookmark.color.color.withValues(alpha: 0.09),
+                    scheme.surfaceContainerLow,
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 6, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        BookmarkBadge(color: bookmark.color, size: 19),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            bookmark.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Hapus penanda',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _remove(context, ref),
+                          icon: Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Row(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  bookmark.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: 'Hapus penanda',
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => _remove(context, ref),
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  size: 20,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
+                          _ColorTag(color: bookmark.color),
+                          const Spacer(),
+                          Icon(
+                            Icons.schedule,
+                            size: 13,
+                            color: scheme.onSurfaceVariant,
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Row(
-                              children: [
-                                _ColorTag(color: bookmark.color),
-                                const Spacer(),
-                                Icon(
-                                  Icons.schedule,
-                                  size: 13,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    bookmark.hasTimestamp
-                                        ? formatDateTimeLabel(
-                                            bookmark.timestamp,
-                                          )
-                                        : 'Tanggal tidak tercatat',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          if (arabic.isNotEmpty)
-                            Text(
-                              arabic,
-                              textAlign: TextAlign.right,
-                              textDirection: TextDirection.rtl,
-                              maxLines: 2,
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              bookmark.hasTimestamp
+                                  ? formatDateTimeLabel(bookmark.timestamp)
+                                  : 'Tanggal tidak tercatat',
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: style.fontFamily,
-                                fontSize: 23,
-                                height: 1.7,
-                                color: scheme.onSurface,
-                              ),
-                            )
-                          else
-                            Text(
-                              'Teks Arab tidak tersedia.',
-                              textAlign: TextAlign.right,
-                              style: theme.textTheme.bodySmall?.copyWith(
+                              style: theme.textTheme.labelSmall?.copyWith(
                                 color: scheme.onSurfaceVariant,
-                                fontStyle: FontStyle.italic,
                               ),
                             ),
-                          if (translation.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Text(
-                                translation,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    if (arabic.isNotEmpty)
+                      Text(
+                        arabic,
+                        textAlign: TextAlign.right,
+                        textDirection: TextDirection.rtl,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: style.fontFamily,
+                          fontSize: 23,
+                          height: 1.7,
+                          color: scheme.onSurface,
+                        ),
+                      )
+                    else
+                      Text(
+                        'Teks Arab tidak tersedia.',
+                        textAlign: TextAlign.right,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    if (translation.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Text(
+                          translation,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -419,6 +416,9 @@ class _BookmarkCard extends ConsumerWidget {
           surahNumber: bookmark.surahNumber,
           initialSurahName: bookmark.displaySurahName,
           initialVerseNumber: bookmark.verseNumber,
+          // Opening a saved reference must not advance the reading challenge;
+          // progress only follows the reader's active position.
+          reportInitialAyah: false,
         ),
       ),
     );

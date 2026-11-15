@@ -77,7 +77,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Surah Al-Baqarah - Ayat 255'), findsOneWidget);
-    expect(find.text('Biru'), findsOneWidget);
+    expect(find.text('Biru'), findsWidgets);
     expect(find.textContaining('Allah, tidak ada tuhan'), findsOneWidget);
     expect(find.textContaining('09:30'), findsOneWidget);
     expect(find.byTooltip('Hapus penanda'), findsOneWidget);
@@ -94,7 +94,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Surah 2 - Ayat 0'), findsOneWidget);
-    expect(find.text('Hijau'), findsOneWidget);
+    expect(find.text('Hijau'), findsWidgets);
     expect(find.text('Teks Arab tidak tersedia.'), findsOneWidget);
     expect(find.text('Tanggal tidak tercatat'), findsOneWidget);
   });

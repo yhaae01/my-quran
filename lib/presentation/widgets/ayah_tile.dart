@@ -8,6 +8,7 @@ import '../../domain/entities/surah.dart';
 import '../providers/audio_provider.dart';
 import '../providers/bookmark_providers.dart';
 import '../providers/settings_providers.dart';
+import 'bookmark_badge.dart';
 import 'bookmark_color_sheet.dart';
 
 class AyahTile extends ConsumerWidget {
@@ -174,11 +175,7 @@ class _BookmarkDot extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'Penanda ${color.label.toLowerCase()}',
-      child: Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(color: color.color, shape: BoxShape.circle),
-      ),
+      child: BookmarkBadge(color: color, size: 15),
     );
   }
 }
