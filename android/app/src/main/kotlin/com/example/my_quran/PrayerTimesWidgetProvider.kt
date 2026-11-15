@@ -6,10 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
-import android.os.Build
-import android.os.SystemClock
 import android.util.TypedValue
-import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetProvider
@@ -17,10 +14,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Shows the five daily prayers, highlights the upcoming one with a live
- * countdown and prints the Hijri date. Flutter writes a week of prayer instants
- * (plus a preformatted Hijri date) so the widget keeps working while the app is
- * closed; home_widget wakes this provider at each prayer time.
+ * Compact banner widget: a centered Hijri date above one centered row with all
+ * five prayer times. Flutter writes a week of prayer instants (plus a
+ * preformatted Hijri date) so the widget keeps working while the app is closed;
+ * home_widget wakes this provider at each prayer time.
  */
 class PrayerTimesWidgetProvider : HomeWidgetProvider() {
 
@@ -41,7 +38,6 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
 
     private fun buildViews(context: Context, payload: Payload): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.prayer_times_widget)
-        views.setTextViewText(R.id.widget_location, payload.location)
 
         val now = System.currentTimeMillis()
         // Before today's Fajr the same day still applies; after Isya this moves
@@ -51,14 +47,13 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
         } ?: payload.days.lastOrNull()
         val prayers = today?.prayers ?: payload.moments.take(5)
         // A stale payload (app not opened for over a week) must not advertise a
-        // prayer in the past; show the refresh prompt instead.
+        // prayer in the past; the row stays readable and nothing is highlighted.
         val next = payload.moments.firstOrNull { it.epochMs > now }
 
         val hijri = today?.hijri?.takeIf { it.isNotBlank() }
             ?: payload.hijri.takeIf { it.isNotBlank() }
             ?: "Kalender Hijriah"
         views.setTextViewText(R.id.widget_hijri, hijri)
-        renderNext(views, next)
         renderPrayerRow(views, prayers, next)
 
         // Runs the Dart entry point in a background isolate. It recomputes the
@@ -84,37 +79,6 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
             views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
         }
         return views
-    }
-
-    private fun renderNext(views: RemoteViews, next: PrayerTime?) {
-        if (next == null) {
-            // Loading/fallback state: keep every label visible instead of
-            // drawing an apparently blank widget when the payload is empty.
-            views.setTextViewText(R.id.widget_prayer_name, "Memuat jadwal")
-            views.setTextViewText(R.id.widget_prayer_time, "--:--")
-            views.setTextViewText(
-                R.id.widget_countdown_label,
-                "Buka aplikasi atau ketuk ⟳",
-            )
-            views.setViewVisibility(R.id.widget_countdown, View.GONE)
-            return
-        }
-
-        views.setTextViewText(R.id.widget_prayer_name, next.label)
-        views.setTextViewText(R.id.widget_prayer_time, next.time)
-        views.setTextViewText(R.id.widget_countdown_label, "menuju adzan")
-        views.setViewVisibility(R.id.widget_countdown, View.VISIBLE)
-
-        val remaining = (next.epochMs - System.currentTimeMillis()).coerceAtLeast(0L)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            views.setChronometerCountDown(R.id.widget_countdown, true)
-        }
-        views.setChronometer(
-            R.id.widget_countdown,
-            SystemClock.elapsedRealtime() + remaining,
-            null,
-            true,
-        )
     }
 
     private fun renderPrayerRow(
@@ -146,7 +110,7 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
             views.setTextViewTextSize(
                 column.timeId,
                 TypedValue.COMPLEX_UNIT_SP,
-                if (isNext) 13f else 12f,
+                if (isNext) 12f else 11f,
             )
         }
     }
@@ -173,8 +137,6 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
                 }
             }
             Payload(
-                location = root.optString("location", "Al-Qur'an")
-                    .takeIf { it.isNotBlank() } ?: "Al-Qur'an",
                 hijri = root.optString("hijriDate", ""),
                 days = days,
                 moments = moments,
@@ -204,7 +166,6 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun emptyPayload() = Payload(
-        location = "Al-Qur'an",
         hijri = "Kalender Hijriah",
         days = emptyList(),
         moments = emptyList(),
@@ -220,7 +181,6 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
     private data class PrayerDay(val hijri: String, val prayers: List<PrayerTime>)
 
     private data class Payload(
-        val location: String,
         val hijri: String,
         val days: List<PrayerDay>,
         val moments: List<PrayerTime>,

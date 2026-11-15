@@ -198,89 +198,43 @@ private struct PrayerTimesWidgetEntryView: View {
   private let muted = Color(red: 0.73, green: 0.87, blue: 0.83)
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      HStack(alignment: .firstTextBaseline, spacing: 6) {
-        Text(entry.location)
-          .font(.system(size: 11))
-          .lineLimit(1)
-          .foregroundStyle(muted)
+    VStack(spacing: 4) {
+      Text(entry.hijri.isEmpty ? "Kalender Hijriah" : entry.hijri)
+        .font(.system(size: 11, weight: .bold))
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .foregroundStyle(gold)
+        .frame(maxWidth: .infinity, alignment: .center)
 
-        Spacer(minLength: 4)
-
-        if !entry.hijri.isEmpty {
-          Text(entry.hijri)
-            .font(.system(size: 10, weight: .medium))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .foregroundStyle(gold.opacity(0.95))
-        }
-      }
-
-      HStack(alignment: .center, spacing: 8) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text("SHOLAT SELANJUTNYA")
-            .font(.system(size: 8, weight: .semibold))
-            .tracking(0.7)
-            .foregroundStyle(muted)
-
-          HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(entry.next?.name ?? "Waktu shalat")
-              .font(.system(size: 15, weight: .bold))
-              .foregroundStyle(gold)
-
-            Text(entry.next?.time ?? "--:--")
-              .font(.system(size: 24, weight: .bold, design: .rounded))
-              .foregroundStyle(cream)
-          }
-        }
-
-        Spacer(minLength: 2)
-
-        if let next = entry.next {
-          VStack(alignment: .trailing, spacing: 0) {
-            Text("menuju adzan")
-              .font(.system(size: 9))
-              .foregroundStyle(muted)
-
-            Text(next.date, style: .timer)
-              .font(.system(size: 13, weight: .semibold, design: .rounded))
-              .monospacedDigit()
-              .foregroundStyle(cream)
-          }
-        }
-      }
-
-      Rectangle()
-        .fill(gold.opacity(0.25))
-        .frame(height: 1)
-
-      HStack(spacing: 3) {
+      HStack(spacing: 2) {
         ForEach(entry.prayers) { prayer in
           let highlighted = prayer.key == entry.next?.key
 
           VStack(spacing: 1) {
             Text(prayer.name)
-              .font(.system(size: 9, weight: highlighted ? .bold : .regular))
+              .font(.system(size: 8, weight: highlighted ? .bold : .regular))
               .lineLimit(1)
               .minimumScaleFactor(0.7)
+              .foregroundStyle(highlighted ? gold : muted)
 
             Text(prayer.time)
-              .font(.system(size: 12, weight: highlighted ? .bold : .semibold))
+              .font(.system(size: 11, weight: highlighted ? .bold : .semibold))
               .lineLimit(1)
-              .minimumScaleFactor(0.75)
+              .minimumScaleFactor(0.7)
+              .foregroundStyle(highlighted ? gold : cream.opacity(0.92))
           }
           .frame(maxWidth: .infinity)
-          .padding(.vertical, 4)
+          .padding(.vertical, 2)
           .background(
-            RoundedRectangle(cornerRadius: 7)
+            RoundedRectangle(cornerRadius: 6)
               .fill(highlighted ? gold.opacity(0.16) : Color.clear)
           )
-          .foregroundStyle(highlighted ? gold : cream.opacity(0.92))
         }
       }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    .padding(14)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    .padding(.horizontal, 12)
+    .padding(.vertical, 8)
     .containerBackground(
       LinearGradient(
         colors: [
@@ -304,7 +258,7 @@ struct PrayerTimesWidget: Widget {
       PrayerTimesWidgetEntryView(entry: entry)
     }
     .configurationDisplayName("Waktu Shalat")
-    .description("Lima waktu shalat, hitung mundur adzan, dan tanggal Hijriah.")
+    .description("Tanggal Hijriah hari ini dan lima waktu shalat dalam satu baris.")
     .supportedFamilies([.systemMedium, .systemLarge])
   }
 }

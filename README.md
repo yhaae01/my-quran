@@ -136,8 +136,8 @@
 - **7-Day Rolling Schedule**: Computes Subuh, Dzuhur, Ashar, Maghrib, and Isya timings with countdown timers.
 - **Timely Notifications**: Scheduled local alerts with custom Islamic notification channels and wake-up alarms (`flutter_local_notifications`).
 - **Home Screen Widgets (`home_widget`)**:
-  - **Android App Widget**: Native 4x3 widget showing the location and Hijri date, the next prayer with a live countdown Chronometer, and a row with all five prayer times. The upcoming prayer is highlighted in gold.
-  - **iOS WidgetKit**: SwiftUI medium & large widgets with the same layout: Hijri date, highlighted next prayer with a `Text(timer)` countdown, and all five times for the day.
+  - **Android App Widget**: Compact 4x1 banner with the Hijri date centered on top and all five prayer times centered in one row below. The upcoming prayer is highlighted in gold, and a small refresh action recomputes the schedule in the background.
+  - **iOS WidgetKit**: SwiftUI medium & large widgets with the same compact layout: a centered Hijri date above one centered row of the five prayer times, with the upcoming prayer highlighted.
   - **Day-Aware Payload**: Flutter sends a week of prayer times with a preformatted Hijri date for each day, so the widget rolls over to the correct row and date even when the app has not been opened.
 
 ### 8. Daily 5:00 AM Hadith Notification
