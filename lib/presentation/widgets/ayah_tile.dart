@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/audio_timing.dart';
 import '../../domain/entities/ayah.dart';
 import '../../domain/entities/bookmark.dart';
 import '../../domain/entities/surah.dart';
@@ -16,38 +17,78 @@ class AyahTile extends ConsumerWidget {
     super.key,
     required this.surah,
     required this.ayah,
+    required this.onPlay,
     this.highlighted = false,
   });
 
   final Surah surah;
   final Ayah ayah;
+
+  /// Starts the surah queue at this ayah, or pauses/resumes it when this ayah
+  /// is already the active track.
+  final VoidCallback? onPlay;
   final bool highlighted;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final settings = ref.watch(settingsProvider);
     final bookmark = ref.watch(
       bookmarkAtProvider((surah: ayah.surahNumber, verse: ayah.number)),
     );
-    final audio = ref.watch(ayahAudioProvider);
 
-    final audioUrl = ayah.audioUrl;
-    final isCurrent = audioUrl != null && audio.url == audioUrl;
-    final isPlaying = isCurrent && audio.isPlaying;
-    final isLoading = isCurrent && audio.isLoading;
+    // Only the active tile rebuilds on position ticks; the selector compares
+    // structurally-equal records so the other 285 tiles stay idle.
+    final playback = ref.watch(
+      ayahAudioProvider.select((state) {
+        final active =
+            state.surahNumber == ayah.surahNumber &&
+            state.ayahNumber == ayah.number;
+        return (
+          active: active,
+          isPlaying: active && state.isPlaying,
+          isLoading: active && state.isLoading,
+          position: active ? state.position : Duration.zero,
+          duration: active ? state.duration : Duration.zero,
+        );
+      }),
+    );
+    final isActive = playback.active;
+    final text = ayah.arabicFor(settings.mushafStyle);
+    final words = isActive ? text.split(' ') : const <String>[];
+    final activeWord = activeWordIndex(
+      words: words,
+      position: playback.position,
+      duration: playback.duration,
+    );
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: isActive
+            ? scheme.primaryContainer.withValues(alpha: 0.32)
+            : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: highlighted
               ? AppColors.gold
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
-          width: highlighted ? 1.8 : 1,
+              : isActive
+              ? scheme.primary.withValues(alpha: 0.75)
+              : scheme.outlineVariant.withValues(alpha: 0.55),
+          width: highlighted || isActive ? 1.8 : 1,
         ),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: scheme.primary.withValues(alpha: 0.1),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 10, 14),
@@ -56,30 +97,26 @@ class AyahTile extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _VerseBadge(number: ayah.number),
+                _VerseBadge(number: ayah.number, active: isActive),
                 const SizedBox(width: 10),
                 if (bookmark != null) _BookmarkDot(color: bookmark.color),
                 const Spacer(),
                 IconButton(
-                  tooltip: isPlaying ? 'Jeda audio' : 'Putar audio',
-                  onPressed: audioUrl == null || isLoading
-                      ? null
-                      : () => ref
-                            .read(ayahAudioProvider.notifier)
-                            .toggle(audioUrl),
-                  icon: isLoading
+                  tooltip: playback.isPlaying ? 'Jeda audio' : 'Putar audio',
+                  onPressed: playback.isLoading ? null : onPlay,
+                  icon: playback.isLoading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Icon(
-                          isPlaying
+                          playback.isPlaying
                               ? Icons.pause_circle_filled
                               : Icons.play_circle_outline,
-                          color: isCurrent
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurfaceVariant,
+                          color: isActive
+                              ? scheme.primary
+                              : scheme.onSurfaceVariant,
                         ),
                 ),
                 IconButton(
@@ -95,7 +132,7 @@ class AyahTile extends ConsumerWidget {
                         ? Icons.bookmark_add_outlined
                         : Icons.bookmark,
                     color: bookmark == null
-                        ? theme.colorScheme.onSurfaceVariant
+                        ? scheme.onSurfaceVariant
                         : bookmark.color.color,
                   ),
                 ),
@@ -104,22 +141,41 @@ class AyahTile extends ConsumerWidget {
             const SizedBox(height: 2),
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: Text(
-                ayah.arabicFor(settings.mushafStyle),
+              child: Text.rich(
+                activeWord == null
+                    ? TextSpan(text: text)
+                    : TextSpan(
+                        children: [
+                          for (var index = 0; index < words.length; index++)
+                            TextSpan(
+                              text: index == words.length - 1
+                                  ? words[index]
+                                  : '${words[index]} ',
+                              style: index == activeWord
+                                  ? TextStyle(
+                                      color: scheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                      backgroundColor: scheme.primary
+                                          .withValues(alpha: 0.16),
+                                    )
+                                  : null,
+                            ),
+                        ],
+                      ),
                 textDirection: TextDirection.rtl,
                 textAlign: TextAlign.right,
                 style: TextStyle(
                   fontFamily: settings.mushafStyle.fontFamily,
                   fontSize: settings.arabicFontSize,
                   height: 1.9,
-                  color: theme.colorScheme.onSurface,
+                  color: scheme.onSurface,
                 ),
               ),
             ),
             if (settings.showTranslation) ...[
               const SizedBox(height: 12),
               Divider(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                color: scheme.outlineVariant.withValues(alpha: 0.6),
                 height: 1,
               ),
               const SizedBox(height: 10),
@@ -128,7 +184,7 @@ class AyahTile extends ConsumerWidget {
                 child: Text(
                   ayah.translation,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: scheme.onSurfaceVariant,
                     height: 1.55,
                   ),
                 ),
@@ -142,9 +198,10 @@ class AyahTile extends ConsumerWidget {
 }
 
 class _VerseBadge extends StatelessWidget {
-  const _VerseBadge({required this.number});
+  const _VerseBadge({required this.number, this.active = false});
 
   final int number;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -152,13 +209,15 @@ class _VerseBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: scheme.secondaryContainer.withValues(alpha: 0.55),
+        color: active
+            ? scheme.primary
+            : scheme.secondaryContainer.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         'Ayat $number',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: scheme.onSecondaryContainer,
+          color: active ? scheme.onPrimary : scheme.onSecondaryContainer,
           fontWeight: FontWeight.w600,
         ),
       ),

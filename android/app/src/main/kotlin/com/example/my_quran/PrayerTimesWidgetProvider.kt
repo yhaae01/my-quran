@@ -5,11 +5,13 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
+import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetProvider
 import org.json.JSONArray
 import org.json.JSONObject
@@ -48,13 +50,27 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
             (day.prayers.lastOrNull()?.epochMs ?: 0L) > now
         } ?: payload.days.lastOrNull()
         val prayers = today?.prayers ?: payload.moments.take(5)
+        // A stale payload (app not opened for over a week) must not advertise a
+        // prayer in the past; show the refresh prompt instead.
         val next = payload.moments.firstOrNull { it.epochMs > now }
-            ?: payload.moments.firstOrNull()
 
-        val hijri = today?.hijri?.takeIf { it.isNotBlank() } ?: payload.hijri
+        val hijri = today?.hijri?.takeIf { it.isNotBlank() }
+            ?: payload.hijri.takeIf { it.isNotBlank() }
+            ?: "Kalender Hijriah"
         views.setTextViewText(R.id.widget_hijri, hijri)
         renderNext(views, next)
         renderPrayerRow(views, prayers, next)
+
+        // Runs the Dart entry point in a background isolate. It recomputes the
+        // schedule from the coordinates saved in the payload, so the refresh
+        // button works even when the app has not been opened recently.
+        views.setOnClickPendingIntent(
+            R.id.widget_refresh,
+            HomeWidgetBackgroundIntent.getBroadcast(
+                context,
+                Uri.parse("myquran://prayer-widget/refresh"),
+            ),
+        )
 
         val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
         if (launchIntent != null) {
@@ -72,9 +88,14 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
 
     private fun renderNext(views: RemoteViews, next: PrayerTime?) {
         if (next == null) {
-            views.setTextViewText(R.id.widget_prayer_name, "Waktu shalat")
+            // Loading/fallback state: keep every label visible instead of
+            // drawing an apparently blank widget when the payload is empty.
+            views.setTextViewText(R.id.widget_prayer_name, "Memuat jadwal")
             views.setTextViewText(R.id.widget_prayer_time, "--:--")
-            views.setTextViewText(R.id.widget_countdown_label, "Buka aplikasi")
+            views.setTextViewText(
+                R.id.widget_countdown_label,
+                "Buka aplikasi atau ketuk ⟳",
+            )
             views.setViewVisibility(R.id.widget_countdown, View.GONE)
             return
         }
@@ -152,7 +173,8 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
                 }
             }
             Payload(
-                location = root.optString("location", "Al-Qur'an"),
+                location = root.optString("location", "Al-Qur'an")
+                    .takeIf { it.isNotBlank() } ?: "Al-Qur'an",
                 hijri = root.optString("hijriDate", ""),
                 days = days,
                 moments = moments,
@@ -183,7 +205,7 @@ class PrayerTimesWidgetProvider : HomeWidgetProvider() {
 
     private fun emptyPayload() = Payload(
         location = "Al-Qur'an",
-        hijri = "",
+        hijri = "Kalender Hijriah",
         days = emptyList(),
         moments = emptyList(),
     )

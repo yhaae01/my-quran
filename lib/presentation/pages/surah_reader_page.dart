@@ -18,6 +18,7 @@ import '../widgets/common_views.dart';
 import '../widgets/font_size_sheet.dart';
 import '../widgets/immersive_reader.dart';
 import '../widgets/quran_text.dart';
+import '../widgets/reciter_sheet.dart';
 import 'mushaf_reader_page.dart';
 
 class SurahReaderPage extends ConsumerWidget {
@@ -89,6 +90,11 @@ class SurahReaderPage extends ConsumerWidget {
                 ),
                 actions: [
                   IconButton(
+                    tooltip: 'Qori & unduhan audio',
+                    onPressed: () => showReciterSheet(context, detail: detail),
+                    icon: const Icon(Icons.record_voice_over_outlined),
+                  ),
+                  IconButton(
                     tooltip: showTranslation
                         ? 'Sembunyikan terjemahan'
                         : 'Tampilkan terjemahan',
@@ -155,6 +161,17 @@ class SurahReaderPage extends ConsumerWidget {
                         ),
                   );
                 },
+                onPlayAyah: (index) {
+                  unawaited(
+                    ref
+                        .read(ayahAudioProvider.notifier)
+                        .toggleAyah(
+                          detail: detail,
+                          ayahIndex: index,
+                          reciter: ref.read(settingsProvider).reciter,
+                        ),
+                  );
+                },
               );
             },
           ),
@@ -192,6 +209,7 @@ class _AyahList extends StatefulWidget {
     required this.style,
     required this.target,
     required this.onAyahVisible,
+    required this.onPlayAyah,
     this.reportInitialAyah = true,
     this.topPadding = 0,
   });
@@ -207,6 +225,7 @@ class _AyahList extends StatefulWidget {
   /// Leaves room for the floating immersive-mode exit button.
   final double topPadding;
   final ValueChanged<Ayah> onAyahVisible;
+  final ValueChanged<int> onPlayAyah;
 
   @override
   State<_AyahList> createState() => _AyahListState();
@@ -273,10 +292,12 @@ class _AyahListState extends State<_AyahList> {
           return _SurahHeader(surah: widget.detail.surah, style: widget.style);
         }
         final ayah = widget.detail.ayahs[index - 1];
+        final ayahIndex = index - 1;
         return AyahTile(
           surah: widget.detail.surah,
           ayah: ayah,
           highlighted: target == ayah.number,
+          onPlay: () => widget.onPlayAyah(ayahIndex),
         );
       },
     );

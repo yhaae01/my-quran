@@ -17,6 +17,7 @@ import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/datasources/quran_remote_data_source.dart';
 import '../../data/datasources/reading_progress_local_data_source.dart';
 import '../../data/models/bookmark_model.dart';
+import '../../data/repositories/audio_download_repository.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/bookmark_repository_impl.dart';
 import '../../data/repositories/challenge_repository_impl.dart';
@@ -107,6 +108,9 @@ final Provider<ChallengeRepository> challengeRepositoryProvider =
         ref.watch(readingProgressRepositoryProvider),
       ),
     );
+
+final Provider<AudioDownloadRepository> audioDownloadRepositoryProvider =
+    Provider<AudioDownloadRepository>((ref) => AudioDownloadRepository());
 
 final Provider<QuranRemoteDataSource> quranRemoteDataSourceProvider =
     Provider<QuranRemoteDataSource>(

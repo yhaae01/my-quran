@@ -5,6 +5,7 @@ import '../../domain/entities/mushaf.dart';
 import '../../domain/entities/prayer.dart';
 import '../../domain/entities/prayer_city.dart';
 import '../../domain/entities/prayer_preferences.dart';
+import '../../domain/entities/reciter.dart';
 import '../../domain/repositories/settings_repository.dart';
 
 class SettingsRepositoryImpl implements SettingsRepository {
@@ -24,6 +25,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   static const String _prayerLongitudeKey = 'prayer_longitude';
   static const String _prayerTimeZoneKey = 'prayer_timezone_id';
   static const String _prayerLabelKey = 'prayer_location_label';
+  static const String _reciterIdKey = 'reciter_id';
 
   @override
   AppSettings load() {
@@ -39,6 +41,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
     final storedLongitude = _box.get(_prayerLongitudeKey);
     final storedTimeZone = _box.get(_prayerTimeZoneKey);
     final storedLabel = _box.get(_prayerLabelKey);
+    final storedReciter = _box.get(_reciterIdKey);
 
     final fontSize = storedSize is num
         ? storedSize
@@ -75,6 +78,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
         timeZoneId: storedTimeZone is String ? storedTimeZone : null,
         locationLabel: storedLabel is String ? storedLabel : null,
       ),
+      reciterId: Reciter.fromId(storedReciter is String ? storedReciter : null)
+          .id,
     );
   }
 
@@ -101,6 +106,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
     await _box.put(_showTranslationKey, settings.showTranslation);
     await _box.put(_mushafStyleKey, settings.mushafStyle.id);
     await _box.put(_themeModeKey, settings.themeMode.name);
+    await _box.put(_reciterIdKey, settings.reciter.id);
 
     final prayer = settings.prayer;
     await _box.put(_prayerNotificationsKey, prayer.notificationsEnabled);

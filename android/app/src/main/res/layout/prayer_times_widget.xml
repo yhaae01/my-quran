@@ -34,6 +34,18 @@
             android:text="Kalender Hijriah"
             android:textColor="#F0D48A"
             android:textSize="10sp" />
+
+        <ImageButton
+            android:id="@+id/widget_refresh"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="4dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Perbarui waktu shalat"
+            android:padding="3dp"
+            android:scaleType="fitCenter"
+            android:src="@android:drawable/ic_popup_sync"
+            android:tint="#B9DED4" />
     </LinearLayout>
 
     <LinearLayout

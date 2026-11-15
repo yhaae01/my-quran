@@ -91,7 +91,27 @@ private struct PrayerProvider: TimelineProvider {
     if let last = payload.days.last {
       return last.prayers
     }
-    return Array(payload.moments.prefix(5))
+    let moments = Array(payload.moments.prefix(5))
+    return moments.isEmpty ? fallbackPrayers() : moments
+  }
+
+  /// Keeps the widget readable while Flutter has not synced a schedule yet.
+  private func fallbackPrayers() -> [PrayerMoment] {
+    let rows = [
+      ("fajr", "Subuh"),
+      ("dhuhr", "Dzuhur"),
+      ("asr", "Ashar"),
+      ("maghrib", "Maghrib"),
+      ("isha", "Isya"),
+    ]
+    return rows.map { row in
+      PrayerMoment(
+        key: row.0,
+        name: row.1,
+        time: "--:--",
+        date: .distantFuture
+      )
+    }
   }
 
   private func hijri(for date: Date, payload: PrayerPayload) -> String {

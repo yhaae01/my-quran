@@ -99,6 +99,7 @@ class AyahModel {
     required this.translation,
     this.uthmani,
     this.audioUrl,
+    this.audioUrls = const {},
   });
 
   final int number;
@@ -106,23 +107,35 @@ class AyahModel {
   final String? uthmani;
   final String translation;
   final String? audioUrl;
+  final Map<String, String> audioUrls;
 
   factory AyahModel.fromEquran(Map<String, dynamic> json) {
+    final audioUrls = _extractAudioMap(json['audio']);
     return AyahModel(
       number: (json['nomorAyat'] as num?)?.toInt() ?? 0,
       arabic: (json['teksArab'] as String? ?? '').trim(),
       translation: (json['teksIndonesia'] as String? ?? '').trim(),
-      audioUrl: _extractAudio(json['audio']),
+      audioUrl: _firstAudio(audioUrls),
+      audioUrls: audioUrls,
     );
   }
 
   factory AyahModel.fromJson(Map<String, dynamic> json) {
+    final rawUrls = json['audioUrls'];
+    final audioUrls = rawUrls is Map
+        ? {
+            for (final entry in rawUrls.entries)
+              if (entry.value is String && (entry.value as String).isNotEmpty)
+                entry.key.toString(): entry.value as String,
+          }
+        : const <String, String>{};
     return AyahModel(
       number: (json['number'] as num?)?.toInt() ?? 0,
       arabic: (json['arabic'] as String? ?? '').trim(),
       uthmani: (json['uthmani'] as String?)?.trim(),
       translation: (json['translation'] as String? ?? '').trim(),
       audioUrl: json['audioUrl'] as String?,
+      audioUrls: audioUrls,
     );
   }
 
@@ -133,6 +146,7 @@ class AyahModel {
       uthmani: text,
       translation: translation,
       audioUrl: audioUrl,
+      audioUrls: audioUrls,
     );
   }
 
@@ -143,6 +157,7 @@ class AyahModel {
       'uthmani': uthmani,
       'translation': translation,
       'audioUrl': audioUrl,
+      'audioUrls': audioUrls,
     };
   }
 
@@ -154,19 +169,26 @@ class AyahModel {
       uthmani: uthmani,
       translation: translation,
       audioUrl: audioUrl,
+      audioUrls: audioUrls,
     );
   }
 
-  static String? _extractAudio(Object? raw) {
-    if (raw is String) return raw.isEmpty ? null : raw;
-    if (raw is Map) {
-      final keys = raw.keys.map((key) => key.toString()).toList()..sort();
-      for (final key in keys) {
-        final value = raw[key];
-        if (value is String && value.isNotEmpty) return value;
+  static Map<String, String> _extractAudioMap(Object? raw) {
+    if (raw is! Map) return const {};
+    final result = <String, String>{};
+    for (final entry in raw.entries) {
+      final value = entry.value;
+      if (value is String && value.trim().isNotEmpty) {
+        result[entry.key.toString()] = value;
       }
     }
-    return null;
+    return result;
+  }
+
+  static String? _firstAudio(Map<String, String> urls) {
+    if (urls.isEmpty) return null;
+    final keys = urls.keys.toList()..sort();
+    return urls[keys.first];
   }
 }
 

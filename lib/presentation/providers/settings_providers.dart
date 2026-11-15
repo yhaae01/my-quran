@@ -8,6 +8,7 @@ import '../../domain/entities/mushaf.dart';
 import '../../domain/entities/prayer.dart';
 import '../../domain/entities/prayer_city.dart';
 import '../../domain/entities/prayer_preferences.dart';
+import '../../domain/entities/reciter.dart';
 import 'core_providers.dart';
 
 class SettingsNotifier extends Notifier<AppSettings> {
@@ -39,6 +40,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setThemeMode(AppThemeMode mode) {
     if (mode == state.themeMode) return;
     _update(state.copyWith(themeMode: mode));
+  }
+
+  void setReciter(Reciter reciter) {
+    if (reciter.id == state.reciterId) return;
+    _update(state.copyWith(reciterId: reciter.id));
   }
 
   void setPrayerNotificationsEnabled(bool enabled) {

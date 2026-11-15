@@ -1,5 +1,6 @@
 import 'mushaf.dart';
 import 'prayer_preferences.dart';
+import 'reciter.dart';
 
 enum AppThemeMode {
   system,
@@ -27,6 +28,7 @@ class AppSettings {
     this.mushafStyle = MushafStyle.kemenag,
     this.themeMode = AppThemeMode.system,
     this.prayer = const PrayerPreferences(),
+    this.reciterId = '05',
   });
 
   static const double minArabicFontSize = 20;
@@ -41,12 +43,18 @@ class AppSettings {
   final AppThemeMode themeMode;
   final PrayerPreferences prayer;
 
+  /// Chosen murottal reciter (`Reciter.id`).
+  final String reciterId;
+
+  Reciter get reciter => Reciter.fromId(reciterId);
+
   AppSettings copyWith({
     double? arabicFontSize,
     bool? showTranslation,
     MushafStyle? mushafStyle,
     AppThemeMode? themeMode,
     PrayerPreferences? prayer,
+    String? reciterId,
   }) {
     return AppSettings(
       arabicFontSize: arabicFontSize ?? this.arabicFontSize,
@@ -54,6 +62,7 @@ class AppSettings {
       mushafStyle: mushafStyle ?? this.mushafStyle,
       themeMode: themeMode ?? this.themeMode,
       prayer: prayer ?? this.prayer,
+      reciterId: reciterId ?? this.reciterId,
     );
   }
 }

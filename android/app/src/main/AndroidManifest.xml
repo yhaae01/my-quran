@@ -53,6 +53,14 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/>
             </intent-filter>
         </receiver>
+        <!-- Sends widget taps (refresh) to the Dart background callback. -->
+        <receiver
+            android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.BACKGROUND"/>
+            </intent-filter>
+        </receiver>
         <receiver
             android:name=".PrayerTimesWidgetProvider"
             android:exported="true">

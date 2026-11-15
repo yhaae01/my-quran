@@ -9,6 +9,7 @@ import '../../core/error/failure.dart';
 import '../../core/utils/hijri_utils.dart';
 import '../../domain/entities/prayer.dart';
 import '../../domain/entities/prayer_preferences.dart';
+import 'adhan_prayer_times_data_source.dart';
 
 /// Pushes the next prayers and a countdown target to the Android/iOS widget.
 class PrayerWidgetDataSource {
@@ -30,25 +31,104 @@ class PrayerWidgetDataSource {
     if (kIsWeb) return;
     await _configure();
     try {
-      final payload = _buildPayload(schedule);
-      await HomeWidget.saveWidgetData<String>(payloadKey, jsonEncode(payload));
-      await HomeWidget.updateWidget(
-        androidName: androidProvider,
-        iOSName: iOSWidgetKind,
+      await _saveAndRefresh(
+        schedule,
+        latitude: preferences.resolvedLatitude,
+        longitude: preferences.resolvedLongitude,
       );
-
-      final upcoming = schedule.moments
-          .where((moment) => moment.instant.isAfter(DateTime.now()))
-          .map((moment) => moment.instant)
-          .toList();
-      if (upcoming.isNotEmpty) {
-        await HomeWidget.scheduleWidgetUpdates(
-          upcoming,
-          androidName: androidProvider,
-        );
-      }
     } catch (error) {
       debugPrint('Widget waktu shalat gagal diperbarui: $error');
+    }
+  }
+
+  /// Recomputes the widget schedule from the coordinates stored in the last
+  /// payload. Used by the background isolate when the user taps refresh, so the
+  /// widget keeps working without opening the app or reading Hive boxes.
+  Future<void> refreshFromStoredData() async {
+    if (kIsWeb) return;
+    await _configure();
+
+    final stored = await _readStoredPayload();
+    final latitude =
+        stored?.latitude ?? defaultPrayerPreferences.resolvedLatitude;
+    final longitude =
+        stored?.longitude ?? defaultPrayerPreferences.resolvedLongitude;
+    final timeZoneId =
+        stored?.timeZoneId ?? defaultPrayerPreferences.resolvedTimeZoneId;
+    final location =
+        stored?.location ?? defaultPrayerPreferences.resolvedLocationLabel;
+
+    final schedule = AdhanPrayerTimesDataSource().calculate(
+      locationLabel: location,
+      latitude: latitude,
+      longitude: longitude,
+      timeZoneId: timeZoneId,
+    );
+    await _saveAndRefresh(schedule, latitude: latitude, longitude: longitude);
+  }
+
+  /// Writes a valid placeholder schedule so the native widget never has to
+  /// draw an empty card when the app data is temporarily unavailable.
+  Future<void> writeFallbackPayload() async {
+    if (kIsWeb) return;
+    await _configure();
+    final preferences = defaultPrayerPreferences;
+    final schedule = AdhanPrayerTimesDataSource().calculate(
+      locationLabel: preferences.resolvedLocationLabel,
+      latitude: preferences.resolvedLatitude,
+      longitude: preferences.resolvedLongitude,
+      timeZoneId: preferences.resolvedTimeZoneId,
+    );
+    await _saveAndRefresh(
+      schedule,
+      latitude: preferences.resolvedLatitude,
+      longitude: preferences.resolvedLongitude,
+    );
+  }
+
+  Future<_StoredWidgetData?> _readStoredPayload() async {
+    try {
+      final raw = await HomeWidget.getWidgetData<String>(payloadKey);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return _StoredWidgetData(
+        location: decoded['location'] as String?,
+        timeZoneId: decoded['timeZoneId'] as String?,
+        latitude: (decoded['latitude'] as num?)?.toDouble(),
+        longitude: (decoded['longitude'] as num?)?.toDouble(),
+      );
+    } catch (error) {
+      debugPrint('Data widget tersimpan tidak dapat dibaca: $error');
+      return null;
+    }
+  }
+
+  Future<void> _saveAndRefresh(
+    PrayerSchedule schedule, {
+    required double latitude,
+    required double longitude,
+  }) async {
+    final payload = _buildPayload(
+      schedule,
+      latitude: latitude,
+      longitude: longitude,
+    );
+    await HomeWidget.saveWidgetData<String>(payloadKey, jsonEncode(payload));
+    await HomeWidget.updateWidget(
+      androidName: androidProvider,
+      iOSName: iOSWidgetKind,
+    );
+
+    final upcoming = schedule.moments
+        .where((moment) => moment.instant.isAfter(DateTime.now()))
+        .map((moment) => moment.instant)
+        .toList();
+    if (upcoming.isNotEmpty) {
+      await HomeWidget.scheduleWidgetUpdates(
+        upcoming,
+        androidName: androidProvider,
+      );
     }
   }
 
@@ -81,11 +161,19 @@ class PrayerWidgetDataSource {
     }
   }
 
-  Map<String, Object?> _buildPayload(PrayerSchedule schedule) {
+  Map<String, Object?> _buildPayload(
+    PrayerSchedule schedule, {
+    required double latitude,
+    required double longitude,
+  }) {
     final location = tz.getLocation(schedule.timeZoneId);
     return {
       'location': schedule.locationLabel,
       'timeZoneId': schedule.timeZoneId,
+      // Kept inside the payload so the background isolate can recalculate the
+      // schedule without Hive or a running ProviderScope.
+      'latitude': latitude,
+      'longitude': longitude,
       'updatedAt': schedule.calculatedAt.toUtc().toIso8601String(),
       // The widget needs today's five times to draw its full row, and the
       // native side picks the right day when the app is not opened.
@@ -121,10 +209,26 @@ class PrayerWidgetDataSource {
     return '${date.year}-$month-$day';
   }
 
+  static const PrayerPreferences defaultPrayerPreferences = PrayerPreferences();
+
   String _clock(PrayerMoment moment, tz.Location location) {
     final local = tz.TZDateTime.from(moment.instant, location);
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
+}
+
+class _StoredWidgetData {
+  const _StoredWidgetData({
+    this.location,
+    this.timeZoneId,
+    this.latitude,
+    this.longitude,
+  });
+
+  final String? location;
+  final String? timeZoneId;
+  final double? latitude;
+  final double? longitude;
 }

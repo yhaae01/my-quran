@@ -7,6 +7,7 @@ import '../widgets/mushaf_style_sheet.dart';
 import '../widgets/prayer_location_sheet.dart';
 import '../widgets/prayer_reminder_settings.dart';
 import '../widgets/quran_text.dart';
+import '../widgets/reciter_sheet.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -156,6 +157,18 @@ class SettingsPage extends ConsumerWidget {
                       .setShowTranslation(value),
                 ),
               ],
+            ),
+          ),
+          const _SectionTitle('Audio'),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.record_voice_over_outlined),
+              title: const Text('Qori murottal'),
+              subtitle: Text(
+                '${settings.reciter.name} · unduhan offline dari pembaca',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showReciterSheet(context),
             ),
           ),
           const _SectionTitle('Waktu Shalat'),
