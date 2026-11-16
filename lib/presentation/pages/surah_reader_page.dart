@@ -20,6 +20,7 @@ import '../widgets/immersive_reader.dart';
 import '../widgets/quran_text.dart';
 import '../widgets/reciter_sheet.dart';
 import 'mushaf_reader_page.dart';
+import 'surah_list_page.dart';
 
 class SurahReaderPage extends ConsumerWidget {
   const SurahReaderPage({
@@ -28,6 +29,7 @@ class SurahReaderPage extends ConsumerWidget {
     this.initialSurahName,
     this.initialVerseNumber,
     this.reportInitialAyah = true,
+    this.backToSurahList = false,
   });
 
   final int surahNumber;
@@ -42,6 +44,13 @@ class SurahReaderPage extends ConsumerWidget {
   /// independent from the real-time reading challenge, which must only follow
   /// the reader's own active position. Scrolling afterwards is still tracked.
   final bool reportInitialAyah;
+
+  /// Whether back should land on the surah list.
+  ///
+  /// Ayah mode is reachable from the dashboard and from a bookmark on another
+  /// tab, where the default pop would return all the way to that tab. Those
+  /// entries set this so back reveals the surah list instead.
+  final bool backToSurahList;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,118 +71,131 @@ class SurahReaderPage extends ConsumerWidget {
       }
     });
 
-    return ImmersiveReader(
-      builder: (context, immersive, toggleImmersive) => Scaffold(
-        appBar: immersive
-            ? null
-            : AppBar(
-                title: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      detail?.surah.latinName ??
-                          initialSurahName ??
-                          'Surah $surahNumber',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (detail != null)
+    return PopScope(
+      // Blocks the implicit back gesture/app-bar arrow so the reader can
+      // replace itself with the surah list instead of leaving the tab stack.
+      canPop: !backToSurahList,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const SurahListPage()),
+        );
+      },
+      child: ImmersiveReader(
+        builder: (context, immersive, toggleImmersive) => Scaffold(
+          appBar: immersive
+              ? null
+              : AppBar(
+                  title: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        '${detail.surah.verseCount} ayat • '
-                        '${detail.surah.revelation}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        detail?.surah.latinName ??
+                            initialSurahName ??
+                            'Surah $surahNumber',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      if (detail != null)
+                        Text(
+                          '${detail.surah.verseCount} ayat • '
+                          '${detail.surah.revelation}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                  actions: [
+                    IconButton(
+                      tooltip: 'Qori & unduhan audio',
+                      onPressed: () =>
+                          showReciterSheet(context, detail: detail),
+                      icon: const Icon(Icons.record_voice_over_outlined),
+                    ),
+                    IconButton(
+                      tooltip: showTranslation
+                          ? 'Sembunyikan terjemahan'
+                          : 'Tampilkan terjemahan',
+                      onPressed: () => ref
+                          .read(settingsProvider.notifier)
+                          .toggleTranslation(),
+                      icon: Icon(
+                        showTranslation
+                            ? Icons.subtitles_outlined
+                            : Icons.subtitles_off_outlined,
+                        color: showTranslation
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Ukuran teks Arab',
+                      onPressed: () => showFontSizeSheet(context),
+                      icon: const Icon(Icons.format_size),
+                    ),
+                    IconButton(
+                      tooltip: 'Buka di mushaf',
+                      onPressed: detail == null
+                          ? null
+                          : () => _openInMushaf(
+                              context,
+                              ref,
+                              style,
+                              surahNumber,
+                              initialVerseNumber ?? 1,
+                            ),
+                      icon: const Icon(Icons.auto_stories_outlined),
+                    ),
+                    IconButton(
+                      tooltip: 'Mode baca penuh',
+                      onPressed: toggleImmersive,
+                      icon: const Icon(Icons.fullscreen_rounded),
+                    ),
                   ],
                 ),
-                actions: [
-                  IconButton(
-                    tooltip: 'Qori & unduhan audio',
-                    onPressed: () => showReciterSheet(context, detail: detail),
-                    icon: const Icon(Icons.record_voice_over_outlined),
-                  ),
-                  IconButton(
-                    tooltip: showTranslation
-                        ? 'Sembunyikan terjemahan'
-                        : 'Tampilkan terjemahan',
-                    onPressed: () =>
-                        ref.read(settingsProvider.notifier).toggleTranslation(),
-                    icon: Icon(
-                      showTranslation
-                          ? Icons.subtitles_outlined
-                          : Icons.subtitles_off_outlined,
-                      color: showTranslation
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Ukuran teks Arab',
-                    onPressed: () => showFontSizeSheet(context),
-                    icon: const Icon(Icons.format_size),
-                  ),
-                  IconButton(
-                    tooltip: 'Buka di mushaf',
-                    onPressed: detail == null
-                        ? null
-                        : () => _openInMushaf(
-                            context,
-                            ref,
-                            style,
-                            surahNumber,
-                            initialVerseNumber ?? 1,
-                          ),
-                    icon: const Icon(Icons.auto_stories_outlined),
-                  ),
-                  IconButton(
-                    tooltip: 'Mode baca penuh',
-                    onPressed: toggleImmersive,
-                    icon: const Icon(Icons.fullscreen_rounded),
-                  ),
-                ],
+          body: SafeArea(
+            top: immersive,
+            bottom: false,
+            child: detailAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => ErrorView(
+                message: error.toString(),
+                onRetry: () => ref.invalidate(surahDetailProvider(surahNumber)),
               ),
-        body: SafeArea(
-          top: immersive,
-          bottom: false,
-          child: detailAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => ErrorView(
-              message: error.toString(),
-              onRetry: () => ref.invalidate(surahDetailProvider(surahNumber)),
+              data: (detail) {
+                return _AyahList(
+                  detail: detail,
+                  style: style,
+                  topPadding: immersive ? 58 : 0,
+                  target: initialVerseNumber,
+                  reportInitialAyah: reportInitialAyah,
+                  onAyahVisible: (ayah) {
+                    unawaited(
+                      ref
+                          .read(readingProgressProvider.notifier)
+                          .record(
+                            surahNumber: detail.surah.number,
+                            ayahNumber: ayah.number,
+                            surahName: detail.surah.latinName,
+                          ),
+                    );
+                  },
+                  onPlayAyah: (index) {
+                    unawaited(
+                      ref
+                          .read(ayahAudioProvider.notifier)
+                          .toggleAyah(
+                            detail: detail,
+                            ayahIndex: index,
+                            reciter: ref.read(settingsProvider).reciter,
+                          ),
+                    );
+                  },
+                );
+              },
             ),
-            data: (detail) {
-              return _AyahList(
-                detail: detail,
-                style: style,
-                topPadding: immersive ? 58 : 0,
-                target: initialVerseNumber,
-                reportInitialAyah: reportInitialAyah,
-                onAyahVisible: (ayah) {
-                  unawaited(
-                    ref
-                        .read(readingProgressProvider.notifier)
-                        .record(
-                          surahNumber: detail.surah.number,
-                          ayahNumber: ayah.number,
-                          surahName: detail.surah.latinName,
-                        ),
-                  );
-                },
-                onPlayAyah: (index) {
-                  unawaited(
-                    ref
-                        .read(ayahAudioProvider.notifier)
-                        .toggleAyah(
-                          detail: detail,
-                          ayahIndex: index,
-                          reciter: ref.read(settingsProvider).reciter,
-                        ),
-                  );
-                },
-              );
-            },
           ),
         ),
       ),

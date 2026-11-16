@@ -6,9 +6,13 @@ import '../../core/utils/prayer_utils.dart';
 import '../../domain/entities/bookmark.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../providers/bookmark_providers.dart';
+import '../providers/core_providers.dart';
 import '../providers/reading_progress_providers.dart';
+import '../providers/settings_providers.dart';
+import '../widgets/reading_mode_sheet.dart';
 import 'challenge_page.dart';
 import 'hijri_calendar_page.dart';
+import 'mushaf_reader_page.dart';
 import 'settings_page.dart';
 import 'surah_list_page.dart';
 import 'surah_reader_page.dart';
@@ -80,7 +84,7 @@ class DashboardPage extends ConsumerWidget {
           const SizedBox(height: 14),
           _ContinueReadingCard(
             progress: progress,
-            onTap: () => _openReader(context, progress),
+            onTap: () => _openReader(context, ref, progress),
           ),
           const SizedBox(height: 18),
           IntrinsicHeight(
@@ -172,7 +176,39 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  void _openReader(BuildContext context, ReadingProgress? progress) {
+  /// Asks for the preferred reading mode before continuing, so the reader is
+  /// never dropped into Ayah mode without a choice.
+  Future<void> _openReader(
+    BuildContext context,
+    WidgetRef ref,
+    ReadingProgress? progress,
+  ) async {
+    final mode = await showReadingModeSheet(
+      context,
+      title: progress == null ? 'Mulai membaca' : 'Lanjutkan bacaan',
+      subtitle: progress == null
+          ? null
+          : '${progress.surahName} • Ayat ${progress.ayahNumber}',
+    );
+    if (mode == null || !context.mounted) return;
+
+    if (mode == ReadingMode.mushaf) {
+      final page = progress == null
+          ? 1
+          : await ref.read(locateMushafPageProvider)(
+              ref.read(settingsProvider).mushafStyle,
+              surah: progress.surahNumber,
+              ayah: progress.ayahNumber,
+            );
+      if (!context.mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => MushafReaderPage(initialPage: page),
+        ),
+      );
+      return;
+    }
+
     if (progress == null) {
       Navigator.of(context)
           .push(MaterialPageRoute<void>(builder: (_) => const SurahListPage()));
@@ -184,6 +220,7 @@ class DashboardPage extends ConsumerWidget {
           surahNumber: progress.surahNumber,
           initialSurahName: progress.surahName,
           initialVerseNumber: progress.ayahNumber,
+          backToSurahList: true,
         ),
       ),
     );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,7 +10,7 @@ import '../providers/bookmark_providers.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/bookmark_badge.dart';
 import '../widgets/common_views.dart';
-import 'surah_reader_page.dart';
+import '../widgets/reading_mode_sheet.dart';
 
 class BookmarksPage extends ConsumerStatefulWidget {
   const BookmarksPage({super.key});
@@ -277,7 +279,7 @@ class _BookmarkCard extends ConsumerWidget {
         child: Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => _openReader(context),
+            onTap: () => _openReader(context, ref),
             child: Ink(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -396,7 +398,7 @@ class _BookmarkCard extends ConsumerWidget {
     );
   }
 
-  void _openReader(BuildContext context) {
+  void _openReader(BuildContext context, WidgetRef ref) {
     if (!bookmark.isNavigable) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -410,16 +412,18 @@ class _BookmarkCard extends ConsumerWidget {
       return;
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => SurahReaderPage(
-          surahNumber: bookmark.surahNumber,
-          initialSurahName: bookmark.displaySurahName,
-          initialVerseNumber: bookmark.verseNumber,
-          // Opening a saved reference must not advance the reading challenge;
-          // progress only follows the reader's active position.
-          reportInitialAyah: false,
-        ),
+    // Let the reader choose between per-ayah and mushaf views instead of
+    // always landing on the Ayah list.
+    unawaited(
+      openVerseInReadingMode(
+        context,
+        ref,
+        surahNumber: bookmark.surahNumber,
+        verseNumber: bookmark.verseNumber,
+        surahName: bookmark.displaySurahName,
+        // Opening a saved reference must not advance the reading challenge;
+        // progress only follows the reader's active position.
+        reportInitialAyah: false,
       ),
     );
   }
