@@ -13,7 +13,6 @@ void main() {
       verseNumber: 1,
       arabicText: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ',
       translation: 'Dengan nama Allah Yang Maha Pengasih lagi Maha Penyayang.',
-      color: BookmarkColor.green,
       timestamp: sampleTimestamp,
     );
 
@@ -26,7 +25,6 @@ void main() {
       expect(model.verseNumber, sampleBookmark.verseNumber);
       expect(model.arabicText, sampleBookmark.arabicText);
       expect(model.translation, sampleBookmark.translation);
-      expect(model.color, BookmarkColor.green);
       expect(model.timestamp, sampleTimestamp);
 
       final restoredEntity = model.toEntity();
@@ -36,7 +34,6 @@ void main() {
       expect(restoredEntity.verseNumber, sampleBookmark.verseNumber);
       expect(restoredEntity.arabicText, sampleBookmark.arabicText);
       expect(restoredEntity.translation, sampleBookmark.translation);
-      expect(restoredEntity.color, sampleBookmark.color);
       expect(restoredEntity.timestamp, sampleBookmark.timestamp);
     });
 
@@ -46,38 +43,20 @@ void main() {
 
     test('copyWith properly updates specified fields while keeping others unchanged', () {
       final updatedBookmark = sampleBookmark.copyWith(
-        color: BookmarkColor.blue,
         verseNumber: 2,
+        translation: 'Terjemahan baru.',
       );
 
       expect(updatedBookmark.id, sampleBookmark.id);
       expect(updatedBookmark.surahName, sampleBookmark.surahName);
-      expect(updatedBookmark.color, BookmarkColor.blue);
       expect(updatedBookmark.verseNumber, 2);
-      expect(updatedBookmark.translation, sampleBookmark.translation);
+      expect(updatedBookmark.translation, 'Terjemahan baru.');
       expect(updatedBookmark.reference, 'Al-Fatihah • Ayat 2');
     });
 
-    test(
-      'BookmarkColor.fromName parses known names and falls back to default',
-      () {
-        expect(BookmarkColor.fromName('red'), BookmarkColor.red);
-        expect(BookmarkColor.fromName('green'), BookmarkColor.green);
-        expect(BookmarkColor.fromName('yellow'), BookmarkColor.yellow);
-        expect(BookmarkColor.fromName('blue'), BookmarkColor.blue);
-
-        // Null or invalid name falls back to BookmarkColor.green
-        expect(BookmarkColor.fromName(null), BookmarkColor.green);
-        expect(BookmarkColor.fromName('purple'), BookmarkColor.green);
-        expect(BookmarkColor.fromName(''), BookmarkColor.green);
-      },
-    );
-
-    test('BookmarkColor returns Indonesian label correctly', () {
-      expect(BookmarkColor.red.label, 'Merah');
-      expect(BookmarkColor.green.label, 'Hijau');
-      expect(BookmarkColor.yellow.label, 'Kuning');
-      expect(BookmarkColor.blue.label, 'Biru');
+    test('exposes professional UI labels instead of colour names', () {
+      expect(Bookmark.activeLabel, 'Penanda Terakhir');
+      expect(Bookmark.savedLabel, 'Ayat Tersimpan');
     });
 
     test('repairs a stored bookmark with missing fields', () {
@@ -88,7 +67,6 @@ void main() {
       expect(entity.surahName, 'Surah 2');
       expect(entity.arabicText, '');
       expect(entity.translation, '');
-      expect(entity.color, BookmarkColor.green);
       expect(entity.hasTimestamp, isFalse);
       expect(entity.isNavigable, isFalse);
       expect(entity.title, 'Surah 2 - Ayat 0');

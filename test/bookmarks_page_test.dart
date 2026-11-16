@@ -57,7 +57,6 @@ void main() {
     verseNumber: 255,
     arabicText: 'اللّٰهُ لَآ اِلٰهَ اِلَّا هُوَ',
     translation: 'Allah, tidak ada tuhan selain Dia.',
-    color: BookmarkColor.blue,
     timestamp: DateTime(2026, 11, 15, 9, 30),
   );
 
@@ -70,17 +69,18 @@ void main() {
     expect(find.text('Belum ada penanda'), findsOneWidget);
   });
 
-  testWidgets('renders surah, ayah, tag, snippet and timestamp', (
+  testWidgets('renders surah, ayah, label, snippet and timestamp', (
     tester,
   ) async {
     await tester.pumpWidget(_wrap(_FakeBookmarkRepository([saved])));
     await tester.pumpAndSettle();
 
     expect(find.text('Surah Al-Baqarah - Ayat 255'), findsOneWidget);
-    expect(find.text('Biru'), findsWidgets);
+    expect(find.text('Penanda Terakhir'), findsOneWidget);
     expect(find.textContaining('Allah, tidak ada tuhan'), findsOneWidget);
     expect(find.textContaining('09:30'), findsOneWidget);
     expect(find.byTooltip('Hapus penanda'), findsOneWidget);
+    expect(find.text('Biru'), findsNothing);
   });
 
   testWidgets('repairs a bookmark with missing fields instead of crashing', (
@@ -94,7 +94,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Surah 2 - Ayat 0'), findsOneWidget);
-    expect(find.text('Hijau'), findsWidgets);
+    expect(find.text('Penanda Terakhir'), findsOneWidget);
     expect(find.text('Teks Arab tidak tersedia.'), findsOneWidget);
     expect(find.text('Tanggal tidak tercatat'), findsOneWidget);
   });

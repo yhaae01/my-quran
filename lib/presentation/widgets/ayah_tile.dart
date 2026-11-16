@@ -9,8 +9,7 @@ import '../../domain/entities/surah.dart';
 import '../providers/audio_provider.dart';
 import '../providers/bookmark_providers.dart';
 import '../providers/settings_providers.dart';
-import 'bookmark_badge.dart';
-import 'bookmark_color_sheet.dart';
+import 'bookmark_sheet.dart';
 
 class AyahTile extends ConsumerWidget {
   const AyahTile({
@@ -98,8 +97,17 @@ class AyahTile extends ConsumerWidget {
             Row(
               children: [
                 _VerseBadge(number: ayah.number, active: isActive),
-                const SizedBox(width: 10),
-                if (bookmark != null) _BookmarkDot(color: bookmark.color),
+                if (bookmark != null) ...[
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: Bookmark.activeLabel,
+                    child: Icon(
+                      Icons.bookmark_rounded,
+                      size: 16,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 IconButton(
                   tooltip: playback.isPlaying ? 'Jeda audio' : 'Putar audio',
@@ -121,7 +129,7 @@ class AyahTile extends ConsumerWidget {
                 ),
                 IconButton(
                   tooltip: bookmark == null ? 'Tandai ayat' : 'Ubah penanda',
-                  onPressed: () => showBookmarkColorSheet(
+                  onPressed: () => showBookmarkSheet(
                     context,
                     surah: surah,
                     ayah: ayah,
@@ -130,10 +138,10 @@ class AyahTile extends ConsumerWidget {
                   icon: Icon(
                     bookmark == null
                         ? Icons.bookmark_add_outlined
-                        : Icons.bookmark,
+                        : Icons.bookmark_rounded,
                     color: bookmark == null
                         ? scheme.onSurfaceVariant
-                        : bookmark.color.color,
+                        : scheme.primary,
                   ),
                 ),
               ],
@@ -221,20 +229,6 @@ class _VerseBadge extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-    );
-  }
-}
-
-class _BookmarkDot extends StatelessWidget {
-  const _BookmarkDot({required this.color});
-
-  final BookmarkColor color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Penanda ${color.label.toLowerCase()}',
-      child: BookmarkBadge(color: color, size: 15),
     );
   }
 }

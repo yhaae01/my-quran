@@ -16,9 +16,7 @@ class BookmarkModel {
     this.verseNumber,
     this.arabicText,
     this.translation,
-    this.color,
     this.timestamp,
-    this.isContinueReading = false,
   });
 
   final String id;
@@ -27,9 +25,7 @@ class BookmarkModel {
   final int? verseNumber;
   final String? arabicText;
   final String? translation;
-  final BookmarkColor? color;
   final DateTime? timestamp;
-  final bool isContinueReading;
 
   factory BookmarkModel.fromEntity(Bookmark bookmark) {
     return BookmarkModel(
@@ -39,9 +35,7 @@ class BookmarkModel {
       verseNumber: bookmark.verseNumber,
       arabicText: bookmark.arabicText,
       translation: bookmark.translation,
-      color: bookmark.color,
       timestamp: bookmark.timestamp,
-      isContinueReading: bookmark.isContinueReading,
     );
   }
 
@@ -63,14 +57,16 @@ class BookmarkModel {
       verseNumber: verse,
       arabicText: arabicText ?? '',
       translation: translation ?? '',
-      color: color ?? BookmarkColor.green,
       timestamp: savedAt,
-      isContinueReading: isContinueReading,
     );
   }
 }
 
 /// Hand-written adapter: no build_runner step is needed to run the app.
+///
+/// Version 3 dropped the colour category and the continue-reading flag, so the
+/// stored record is smaller. Versions 1 and 2 are still read for people
+/// upgrading from an older build; their colour and flag are discarded.
 class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
   @override
   final int typeId = 0;
@@ -80,17 +76,44 @@ class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
     final version = reader.readByte();
     switch (version) {
       case 1:
+        final id = reader.readString();
+        final surahName = reader.readString();
+        final surahNumber = reader.readInt();
+        final verseNumber = reader.readInt();
+        final arabicText = reader.readString();
+        final translation = reader.readString();
+        // Legacy colour category, no longer part of the model.
+        reader.readString();
         return BookmarkModel(
-          id: reader.readString(),
-          surahName: reader.readString(),
-          surahNumber: reader.readInt(),
-          verseNumber: reader.readInt(),
-          arabicText: reader.readString(),
-          translation: reader.readString(),
-          color: BookmarkColor.fromName(reader.readString()),
+          id: id,
+          surahName: surahName,
+          surahNumber: surahNumber,
+          verseNumber: verseNumber,
+          arabicText: arabicText,
+          translation: translation,
           timestamp: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
         );
       case 2:
+        final id = reader.readString();
+        final surahName = reader.readString();
+        final surahNumber = reader.readInt();
+        final verseNumber = reader.readInt();
+        final arabicText = reader.readString();
+        final translation = reader.readString();
+        // Legacy colour category and continue-reading flag.
+        reader.readString();
+        final timestamp = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
+        reader.readBool();
+        return BookmarkModel(
+          id: id,
+          surahName: surahName,
+          surahNumber: surahNumber,
+          verseNumber: verseNumber,
+          arabicText: arabicText,
+          translation: translation,
+          timestamp: timestamp,
+        );
+      case 3:
         return BookmarkModel(
           id: reader.readString(),
           surahName: reader.readString(),
@@ -98,9 +121,7 @@ class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
           verseNumber: reader.readInt(),
           arabicText: reader.readString(),
           translation: reader.readString(),
-          color: BookmarkColor.fromName(reader.readString()),
           timestamp: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
-          isContinueReading: reader.readBool(),
         );
       default:
         throw HiveError('Versi data penanda tidak dikenal: $version');
@@ -110,18 +131,16 @@ class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
   @override
   void write(BinaryWriter writer, BookmarkModel obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(3)
       ..writeString(obj.id)
       ..writeString(obj.surahName ?? '')
       ..writeInt(obj.surahNumber ?? 0)
       ..writeInt(obj.verseNumber ?? 0)
       ..writeString(obj.arabicText ?? '')
       ..writeString(obj.translation ?? '')
-      ..writeString((obj.color ?? BookmarkColor.green).name)
       ..writeInt(
         (obj.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0))
             .millisecondsSinceEpoch,
-      )
-      ..writeBool(obj.isContinueReading);
+      );
   }
 }

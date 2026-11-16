@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/app_theme.dart';
 import '../../domain/entities/ayah.dart';
 import '../../domain/entities/bookmark.dart';
 import '../../domain/entities/mushaf.dart';
 import '../../domain/entities/surah.dart';
 import '../providers/bookmark_providers.dart';
-import 'bookmark_badge.dart';
 
-Future<void> showBookmarkColorSheet(
+Future<void> showBookmarkSheet(
   BuildContext context, {
   required Surah surah,
   required Ayah ayah,
@@ -19,7 +17,7 @@ Future<void> showBookmarkColorSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => BookmarkColorSheet(
+    builder: (_) => BookmarkSheet(
       surah: surah,
       ayah: ayah,
       existing: existing,
@@ -28,8 +26,13 @@ Future<void> showBookmarkColorSheet(
   );
 }
 
-class BookmarkColorSheet extends ConsumerWidget {
-  const BookmarkColorSheet({
+/// Saves the tapped verse as the single active bookmark.
+///
+/// There are no colour categories any more: the saved verse is simply the last
+/// marker and the "Lanjutkan Bacaan" position, which is why the sheet explains
+/// that a new marker replaces the previous one.
+class BookmarkSheet extends ConsumerWidget {
+  const BookmarkSheet({
     super.key,
     required this.surah,
     required this.ayah,
@@ -47,6 +50,8 @@ class BookmarkColorSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isSaved = existing != null;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -55,29 +60,49 @@ class BookmarkColorSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              existing == null ? 'Tandai ayat' : 'Ubah penanda',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${surah.latinName} • Ayat ${ayah.number}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.bookmark_rounded, color: scheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isSaved ? Bookmark.savedLabel : 'Tandai ayat',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${surah.latinName} • Ayat ${ayah.number}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLow,
+                color: scheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(
-                    alpha: 0.6,
-                  ),
+                  color: scheme.outlineVariant.withValues(alpha: 0.6),
                 ),
               ),
               child: Column(
@@ -93,7 +118,7 @@ class BookmarkColorSheet extends ConsumerWidget {
                       fontFamily: (style ?? MushafStyle.kemenag).fontFamily,
                       fontSize: 21,
                       height: 1.8,
-                      color: theme.colorScheme.onSurface,
+                      color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -102,7 +127,7 @@ class BookmarkColorSheet extends ConsumerWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: scheme.onSurfaceVariant,
                       height: 1.45,
                     ),
                   ),
@@ -110,38 +135,28 @@ class BookmarkColorSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 18),
-            Text(
-              existing == null
-                  ? 'Pilih emblem penanda'
-                  : 'Ganti emblem penanda',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            FilledButton.icon(
+              onPressed: () => _save(context, ref),
+              icon: const Icon(Icons.bookmark_add_rounded),
+              label: Text(
+                isSaved
+                    ? 'Perbarui ${Bookmark.activeLabel}'
+                    : 'Simpan sebagai ${Bookmark.activeLabel}',
               ),
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                for (final color in BookmarkColor.values)
-                  _ColorChoice(
-                    color: color,
-                    selected: existing?.color == color,
-                    onTap: () => _save(context, ref, color),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
             Text(
-              'Penanda bersifat pribadi: tersimpan di perangkat dan tidak '
-              'memengaruhi progres tantangan bacaan Anda.',
+              'Hanya satu penanda aktif. Ayat ini menggantikan penanda '
+              'sebelumnya dan menjadi titik Lanjutkan Bacaan yang ikut '
+              'menyinkronkan progres tantangan kelompok Anda.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: scheme.onSurfaceVariant,
                 height: 1.4,
               ),
             ),
-            if (existing != null) ...[
-              const SizedBox(height: 18),
+            if (isSaved) ...[
+              const SizedBox(height: 14),
               OutlinedButton.icon(
                 onPressed: () async {
                   final notifier = ref.read(bookmarksProvider.notifier);
@@ -158,75 +173,19 @@ class BookmarkColorSheet extends ConsumerWidget {
     );
   }
 
-  Future<void> _save(
-    BuildContext context,
-    WidgetRef ref,
-    BookmarkColor color,
-  ) async {
+  Future<void> _save(BuildContext context, WidgetRef ref) async {
     final now = DateTime.now();
     final bookmark = Bookmark(
-      id:
-          existing?.id ??
-          '${surah.number}_${ayah.number}_${now.microsecondsSinceEpoch}',
+      id: '${surah.number}_${ayah.number}',
       surahName: surah.latinName,
       surahNumber: surah.number,
       verseNumber: ayah.number,
       arabicText: ayah.arabicFor(style ?? MushafStyle.kemenag),
       translation: ayah.translation,
-      color: color,
-      timestamp: existing?.timestamp ?? now,
+      timestamp: now,
     );
 
     await ref.read(bookmarksProvider.notifier).save(bookmark);
     if (context.mounted) Navigator.of(context).pop();
-  }
-}
-
-class _ColorChoice extends StatelessWidget {
-  const _ColorChoice({
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final BookmarkColor color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: selected
-                ? color.color.withValues(alpha: 0.12)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              BookmarkBadge(color: color, size: 42, selected: selected),
-              const SizedBox(height: 8),
-              Text(
-                color.label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

@@ -1,28 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../domain/entities/bookmark.dart';
-
 abstract final class AppColors {
   static const Color emerald = Color(0xFF0F5B4E);
   static const Color gold = Color(0xFFC9A227);
   static const Color parchment = Color(0xFFFFFBF1);
   static const Color parchmentDark = Color(0xFF16201C);
-  static const Color bookmarkRed = Color(0xFFD9534F);
-  static const Color bookmarkGreen = Color(0xFF3E9D6E);
-  static const Color bookmarkYellow = Color(0xFFE6B422);
-  static const Color bookmarkBlue = Color(0xFF3D7EDB);
-}
-
-extension BookmarkColorPalette on BookmarkColor {
-  Color get color => switch (this) {
-    BookmarkColor.red => AppColors.bookmarkRed,
-    BookmarkColor.green => AppColors.bookmarkGreen,
-    BookmarkColor.yellow => AppColors.bookmarkYellow,
-    BookmarkColor.blue => AppColors.bookmarkBlue,
-  };
-
-  Color get onColor =>
-      this == BookmarkColor.yellow ? Colors.black87 : Colors.white;
 }
 
 abstract final class AppTheme {

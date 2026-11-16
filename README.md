@@ -5,7 +5,7 @@
 <h1 align="center">Al-Qur'an</h1>
 
 <p align="center">
-  A serene, offline-first Quran and Islamic companion application built with Flutter — featuring dashboard-first navigation, immersive distraction-free reading, dual-script Mushaf reading (Madinah & Kemenag), Ayah-by-Ayah translation and audio playback with a translation toggle, informative 4-color bookmarks, customizable light/dark themes, collaborative group reading challenges via Firebase, accurate prayer times with Adhan notifications, and interactive Home Screen Widgets for Android and iOS.
+  A serene, offline-first Quran and Islamic companion application built with Flutter — featuring dashboard-first navigation, immersive distraction-free reading, dual-script Mushaf reading (Madinah & Kemenag), Ayah-by-Ayah translation and audio playback with a translation toggle, a single active bookmark that doubles as the continue-reading position, customizable light/dark themes, collaborative group reading challenges via Firebase, accurate prayer times with Adhan notifications, and interactive Home Screen Widgets for Android and iOS.
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@
   - [Dashboard & Immersive Reading](#1-dashboard--immersive-reading)
   - [Ayah-by-Ayah Reader](#2-ayah-by-ayah-reader)
   - [Page-by-Page Mushaf](#3-page-by-page-mushaf-604-pages)
-  - [Informative Color-Coded Bookmarks](#4-informative-color-coded-bookmarks)
+  - [Active Bookmark & Continue Reading](#4-active-bookmark--continue-reading)
   - [Dark & Light Theme](#5-dark--light-theme)
   - [Firebase Reading Challenges & Collaboration](#6-firebase-reading-challenges--collaboration)
   - [Prayer Times, Adhan Notifications & Home Widgets](#7-prayer-times-adhan-notifications--home-widgets)
@@ -103,17 +103,17 @@
   - **Madinah Mushaf**: Classic Uthmani script based on King Fahd Complex standards.
   - **Kemenag Mushaf**: Standard Indonesian layout (Mushaf Standar Indonesia) verified by the Ministry of Religious Affairs (Kemenag).
 - **Faithful Page Layouts**: Exactly 604 pages rendered via high-performance horizontal paging (`PageView`), complete with juz markers, surah heading banners, basmalah calligraphies, and Arabic page numbering.
-- **Tap-to-Bookmark Ayat**: Tap any ayah directly in the mushaf page to open its action sheet with the verse preview, translation and category emblems. Saved verses are tinted on the page in their category colour.
+- **Tap-to-Bookmark Ayat**: Tap any ayah directly in the mushaf page to open its action sheet with the verse preview and translation. The saved verse is highlighted with a soft gold tint on the page.
 - **Immersive Landscape Paging**: In landscape the reader hides its chrome and shows a floating page badge with previous/next controls.
 - **Offline Asset Index**: Pre-indexed surah and ayah page boundaries bundled in JSON format for instantaneous, offline page resolution.
 
-### 4. Informative Color-Coded Bookmarks
-- **Four Categorization Emblems**: Mark verses with **Red, Green, Yellow, or Blue** ribbon badges. The gradient emblem replaces plain colour dots in the picker, filter chips, group headers, ayah tiles and saved cards.
-- **Informative Cards**: Every card shows the surah name and ayah number (e.g. "Surah Al-Baqarah - Ayat 255"), the category emblem, a two-line Arabic snippet with its translation, and the date/time it was saved.
-- **Jump & Delete**: Tap a card, then choose **Mode per Ayat** or **Mode Mushaf** to open that ayah; the delete button on the card removes it (swipe-to-delete with Undo is also supported).
-- **Filtering**: Filter by category; counts per category are shown in the filter bar.
-- **One Primary "Lanjutkan Bacaan"**: Any bookmark can be promoted with **Jadikan Lanjutkan Bacaan**; promoting a second one demotes the first, so exactly one primary bookmark drives the dashboard resume card and the group challenge. Saving, opening or deleting secondary bookmarks never writes reading progress, and opening one skips the initial progress report, so personal references cannot move the real-time challenge leaderboard. Reading past the primary position releases the flag automatically.
-- **Resilient Local Storage**: Backed by Hive with a custom binary adapter. Missing fields are repaired with readable fallbacks and unreadable records are skipped so a damaged entry can never crash the list.
+### 4. Active Bookmark & Continue Reading
+- **One Active Bookmark**: The app keeps exactly one saved verse. Marking a new ayah replaces the previous marker, so the bookmark list never turns into clutter.
+- **Simultaneous "Lanjutkan Bacaan"**: Saving a bookmark also moves the reading position to that verse and syncs it to every group challenge through the usual debounced Firestore write. The dashboard resume card and the marker always start in sync.
+- **Clean Labels**: Colour names are gone; the marker is presented with a bookmark icon and the professional label **Penanda Terakhir**, with **Ayat Tersimpan** used in the save sheet.
+- **Informative Card**: The card shows the surah name and ayah number (e.g. "Surah Al-Baqarah - Ayat 255"), a two-line Arabic snippet with its translation, and the date/time it was saved.
+- **Jump & Delete**: Tap the card, then choose **Mode per Ayat** or **Mode Mushaf** to open that ayah. Back from Ayah mode lands on the surah list rather than the dashboard. The delete button removes the marker (Undo is offered).
+- **Resilient Local Storage**: Backed by Hive with a custom binary adapter that still reads older records while ignoring their retired colour fields. Missing fields are repaired with readable fallbacks and unreadable records are skipped so a damaged entry can never crash the list.
 
 ### 5. Dark & Light Theme
 - **Three Modes**: **Light (Terang)**, **Dark (Gelap)**, and **System (Sistem)** matching the device theme.
@@ -390,7 +390,7 @@ flutter test
 ```
 
 ### Test Suite Highlights
-- `test/bookmark_model_test.dart`: Entity mapping, `copyWith`, repaired missing-field fallbacks, informative titles, and `BookmarkColor` unit tests.
+- `test/bookmark_model_test.dart`: Entity mapping, `copyWith`, repaired missing-field fallbacks, informative titles, and active bookmark labels.
 - `test/bookmark_storage_test.dart`: Hive CRUD operations, sorting, and lifecycle.
 - `test/bookmarks_page_test.dart`: Bookmark screen empty state, card content, repaired entries, and delete action widget tests.
 - `test/prayer_times_test.dart`: Solar calculation assertions, timezone formatting (WIB/WITA/WIT), and midnight countdown handling.
@@ -403,7 +403,7 @@ flutter test
 - `test/auth_form_test.dart`: Email/password form, registration confirmation, validation messages and eye toggles.
 - `test/double_back_exit_test.dart`: First back press warning and second-press exit.
 - `test/hijri_utils_test.dart`: Known Umm al-Qura conversion, day rollover and label formatting.
-- `test/bookmark_progress_independence_test.dart`: Saving bookmarks never writes challenge progress.
+- `test/bookmark_sync_test.dart`: A new bookmark replaces the previous one, syncs its verse to reading progress, trims legacy multi-bookmark data, and stays the saved marker while reading continues.
 - `test/hadith_test.dart`: Hadith entity and model serialization, random selection helper with empty fallback, and 05:00 AM daily notification scheduling.
 - `test/hijri_calendar_page_test.dart`: Interactive monthly Hijri calendar rendering, weekday alignment, swipe/button navigation, and today highlight.
 

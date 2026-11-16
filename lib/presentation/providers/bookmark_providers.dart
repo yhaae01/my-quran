@@ -6,65 +6,43 @@ import 'reading_progress_providers.dart';
 
 typedef BookmarkKey = ({int surah, int verse});
 
+/// Holds the single active bookmark of the app.
+///
+/// A bookmark is both the saved verse and the "Lanjutkan Bacaan" position:
+/// saving a new one replaces the previous entry and pushes that verse to the
+/// reading progress, which is mirrored to every group challenge the reader has
+/// joined. Entries left over from older multi-bookmark builds are trimmed to
+/// the newest one on load.
 class BookmarksNotifier extends AsyncNotifier<List<Bookmark>> {
   @override
-  Future<List<Bookmark>> build() {
-    return ref.watch(getBookmarksProvider)();
+  Future<List<Bookmark>> build() async {
+    final bookmarks = await ref.watch(getBookmarksProvider)();
+
+    if (bookmarks.length <= 1) return bookmarks;
+
+    // Older builds allowed many personal bookmarks. Keep only the newest one
+    // so the single active bookmark rule also holds for upgraded installs.
+    final active = bookmarks.first;
+    for (final extra in bookmarks.skip(1)) {
+      await ref.read(deleteBookmarkProvider)(extra.id);
+    }
+    return [active];
   }
 
-  /// Adds a bookmark or replaces the one already attached to the same verse.
+  /// Saves [bookmark] as the one active bookmark, replacing the previous one.
   ///
-  /// Saving never touches reading progress: personal bookmarks are independent
-  /// references. Only [setContinueReading] may move the shared reading position.
+  /// The saved verse immediately becomes the shared reading position, so the
+  /// dashboard resume card and the group challenge follow the new marker.
   Future<void> save(Bookmark bookmark) async {
     final current = state.value ?? await _fetch();
-    final replaced = current.where(
-      (existing) =>
-          existing.id == bookmark.id ||
-          (existing.surahNumber == bookmark.surahNumber &&
-              existing.verseNumber == bookmark.verseNumber),
-    );
-    // Re-tagging the primary verse must not silently drop its resume flag.
-    final keepContinueReading = replaced.any(
-      (existing) => existing.isContinueReading,
-    );
-    final incoming = keepContinueReading && !bookmark.isContinueReading
-        ? bookmark.copyWith(isContinueReading: true)
-        : bookmark;
 
-    for (final existing in replaced) {
-      if (existing.id != incoming.id) {
+    for (final existing in current) {
+      if (existing.id != bookmark.id) {
         await ref.read(deleteBookmarkProvider)(existing.id);
       }
     }
-    await ref.read(saveBookmarkProvider)(incoming);
-    await _reload();
-  }
-
-  Future<void> remove(String id) async {
-    await ref.read(deleteBookmarkProvider)(id);
-    await _reload();
-  }
-
-  /// Marks [bookmark] as the one "Lanjutkan Bacaan" reference.
-  ///
-  /// Any previously primary bookmark is demoted in the same write, so exactly
-  /// one personal bookmark can drive the resume card and the group challenge.
-  /// The reading position is moved to this verse (also when it is behind the
-  /// current position) because the reader explicitly picked it.
-  Future<void> setContinueReading(Bookmark bookmark) async {
-    final current = state.value ?? await _fetch();
-    final updated = <Bookmark>[
-      for (final item in current)
-        if (item.id == bookmark.id)
-          item.copyWith(isContinueReading: true)
-        else if (item.isContinueReading)
-          item.copyWith(isContinueReading: false)
-        else
-          item,
-    ];
-    await _persistChanged(current, updated);
-    state = AsyncValue.data(updated);
+    await ref.read(saveBookmarkProvider)(bookmark);
+    state = AsyncValue.data([bookmark]);
 
     await ref
         .read(readingProgressProvider.notifier)
@@ -75,34 +53,12 @@ class BookmarksNotifier extends AsyncNotifier<List<Bookmark>> {
         );
   }
 
-  /// Drops the primary flag, for example after the reader moved past it.
-  Future<void> clearContinueReading() async {
-    final current = state.value ?? const <Bookmark>[];
-    final primary = current.where((item) => item.isContinueReading).toList();
-    if (primary.isEmpty) return;
-
-    final updated = <Bookmark>[
-      for (final item in current)
-        item.isContinueReading ? item.copyWith(isContinueReading: false) : item,
-    ];
-    await _persistChanged(current, updated);
-    state = AsyncValue.data(updated);
+  Future<void> remove(String id) async {
+    await ref.read(deleteBookmarkProvider)(id);
+    await _reload();
   }
 
   Future<List<Bookmark>> _fetch() => ref.read(getBookmarksProvider)();
-
-  Future<void> _persistChanged(
-    List<Bookmark> before,
-    List<Bookmark> after,
-  ) async {
-    final previous = {for (final item in before) item.id: item};
-    for (final item in after) {
-      final old = previous[item.id];
-      if (old == null || old.isContinueReading != item.isContinueReading) {
-        await ref.read(saveBookmarkProvider)(item);
-      }
-    }
-  }
 
   Future<void> _reload() async {
     state = AsyncValue.data(await _fetch());
@@ -125,11 +81,11 @@ final bookmarkAtProvider = Provider.family<Bookmark?, BookmarkKey>((ref, key) {
   return null;
 });
 
-/// The single primary bookmark that backs "Lanjutkan Bacaan", if any.
-final continueReadingBookmarkProvider = Provider<Bookmark?>((ref) {
+/// The single active bookmark, which also backs "Lanjutkan Bacaan".
+final activeBookmarkProvider = Provider<Bookmark?>((ref) {
   final bookmarks = ref.watch(bookmarksProvider).value ?? const <Bookmark>[];
   for (final bookmark in bookmarks) {
-    if (bookmark.isContinueReading && bookmark.isNavigable) return bookmark;
+    if (bookmark.isNavigable) return bookmark;
   }
   return null;
 });

@@ -1,24 +1,3 @@
-enum BookmarkColor {
-  red,
-  green,
-  yellow,
-  blue;
-
-  String get label => switch (this) {
-    BookmarkColor.red => 'Merah',
-    BookmarkColor.green => 'Hijau',
-    BookmarkColor.yellow => 'Kuning',
-    BookmarkColor.blue => 'Biru',
-  };
-
-  static BookmarkColor fromName(String? name) {
-    return BookmarkColor.values.firstWhere(
-      (color) => color.name == name,
-      orElse: () => BookmarkColor.green,
-    );
-  }
-}
-
 class Bookmark {
   const Bookmark({
     required this.id,
@@ -27,10 +6,12 @@ class Bookmark {
     required this.verseNumber,
     required this.arabicText,
     required this.translation,
-    required this.color,
     required this.timestamp,
-    this.isContinueReading = false,
   });
+
+  /// Professional label used across the bookmark UI instead of colour names.
+  static const String activeLabel = 'Penanda Terakhir';
+  static const String savedLabel = 'Ayat Tersimpan';
 
   final String id;
   final String surahName;
@@ -38,14 +19,7 @@ class Bookmark {
   final int verseNumber;
   final String arabicText;
   final String translation;
-  final BookmarkColor color;
   final DateTime timestamp;
-
-  /// The single primary bookmark used by the "Lanjutkan Bacaan" card and synced
-  /// to the group challenge. At most one bookmark carries this flag; every
-  /// other bookmark is a secondary personal reference that never writes
-  /// reading progress.
-  final bool isContinueReading;
 
   String get reference => '$displaySurahName • Ayat $verseNumber';
 
@@ -78,9 +52,7 @@ class Bookmark {
     int? verseNumber,
     String? arabicText,
     String? translation,
-    BookmarkColor? color,
     DateTime? timestamp,
-    bool? isContinueReading,
   }) {
     return Bookmark(
       id: id ?? this.id,
@@ -89,9 +61,7 @@ class Bookmark {
       verseNumber: verseNumber ?? this.verseNumber,
       arabicText: arabicText ?? this.arabicText,
       translation: translation ?? this.translation,
-      color: color ?? this.color,
       timestamp: timestamp ?? this.timestamp,
-      isContinueReading: isContinueReading ?? this.isContinueReading,
     );
   }
 }

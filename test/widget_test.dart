@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_quran/domain/entities/ayah.dart';
 import 'package:my_quran/domain/entities/bookmark.dart';
 import 'package:my_quran/domain/entities/mushaf.dart';
+import 'package:my_quran/domain/entities/reading_progress.dart';
 import 'package:my_quran/domain/entities/surah.dart';
 import 'package:my_quran/domain/repositories/bookmark_repository.dart';
+import 'package:my_quran/domain/repositories/reading_progress_repository.dart';
 import 'package:my_quran/presentation/providers/core_providers.dart';
 import 'package:my_quran/presentation/widgets/mushaf_page_widget.dart';
 
@@ -24,6 +26,14 @@ class _FakeBookmarkRepository implements BookmarkRepository {
   Future<void> deleteBookmark(String id) async {
     saved.removeWhere((bookmark) => bookmark.id == id);
   }
+}
+
+class _FakeReadingProgressRepository implements ReadingProgressRepository {
+  @override
+  ReadingProgress? load() => null;
+
+  @override
+  Future<void> save(ReadingProgress progress) async {}
 }
 
 const _surah = Surah(
@@ -54,7 +64,12 @@ const _page = MushafPage(
 
 Widget _wrap(_FakeBookmarkRepository repository) {
   return ProviderScope(
-    overrides: [bookmarkRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      bookmarkRepositoryProvider.overrideWithValue(repository),
+      readingProgressRepositoryProvider.overrideWithValue(
+        _FakeReadingProgressRepository(),
+      ),
+    ],
     child: const MaterialApp(
       home: Scaffold(body: MushafPageWidget(page: _page)),
     ),
@@ -87,12 +102,11 @@ void main() {
 
     expect(find.text('Tandai ayat'), findsOneWidget);
 
-    await tester.tap(find.text('Biru'));
+    await tester.tap(find.text('Simpan sebagai Penanda Terakhir'));
     await tester.pumpAndSettle();
 
     expect(repository.saved, hasLength(1));
     expect(repository.saved.single.surahNumber, 1);
     expect(repository.saved.single.verseNumber, 1);
-    expect(repository.saved.single.color, BookmarkColor.blue);
   });
 }

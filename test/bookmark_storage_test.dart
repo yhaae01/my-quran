@@ -34,7 +34,6 @@ void main() {
       verseNumber: 1,
       arabicText: 'بِسْمِ اللّٰهِ',
       translation: 'Dengan nama Allah.',
-      color: BookmarkColor.blue,
       timestamp: DateTime(2026, 11, 14, 9, 30),
     );
 
@@ -42,14 +41,16 @@ void main() {
     var saved = await repository.getBookmarks();
 
     expect(saved, hasLength(1));
-    expect(saved.single.color, BookmarkColor.blue);
+    expect(saved.single.translation, 'Dengan nama Allah.');
     expect(saved.single.reference, 'Al-Fatihah • Ayat 1');
 
-    await repository.saveBookmark(bookmark.copyWith(color: BookmarkColor.red));
+    await repository.saveBookmark(
+      bookmark.copyWith(translation: 'Terjemahan diperbarui.'),
+    );
     saved = await repository.getBookmarks();
 
     expect(saved, hasLength(1));
-    expect(saved.single.color, BookmarkColor.red);
+    expect(saved.single.translation, 'Terjemahan diperbarui.');
     expect(saved.single.timestamp, bookmark.timestamp);
 
     await repository.deleteBookmark(bookmark.id);
@@ -65,7 +66,6 @@ void main() {
       verseNumber: 1,
       arabicText: 'الٓمٓ',
       translation: 'Alif Lam Mim.',
-      color: BookmarkColor.green,
       timestamp: DateTime(2026, 1, 1),
     );
     final newer = Bookmark(
@@ -75,7 +75,6 @@ void main() {
       verseNumber: 1,
       arabicText: 'قُلْ هُوَ اللّٰهُ أَحَدٌ',
       translation: 'Katakanlah, Dialah Allah Yang Maha Esa.',
-      color: BookmarkColor.yellow,
       timestamp: DateTime(2026, 2, 1),
     );
 

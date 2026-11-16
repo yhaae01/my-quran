@@ -34,18 +34,9 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final progress = ref.watch(readingProgressProvider);
-    final pinned = ref.watch(continueReadingBookmarkProvider);
-    // A designated primary bookmark overrides the active reading position for
-    // "Lanjutkan Bacaan"; secondary bookmarks never do.
-    final resume = pinned == null
-        ? progress
-        : ReadingProgress(
-            surahNumber: pinned.surahNumber,
-            ayahNumber: pinned.verseNumber,
-            surahName: pinned.displaySurahName,
-            updatedAt: pinned.timestamp,
-          );
+    // Saving the single active bookmark pushes its verse here, so the resume
+    // card always follows the latest reading position.
+    final resume = ref.watch(readingProgressProvider);
     final bookmarks = ref.watch(bookmarksProvider).value ?? const <Bookmark>[];
     final now = DateTime.now();
 
@@ -95,7 +86,6 @@ class DashboardPage extends ConsumerWidget {
           const SizedBox(height: 14),
           _ContinueReadingCard(
             progress: resume,
-            fromBookmark: pinned != null,
             onTap: () => _openReader(context, ref, resume),
           ),
           const SizedBox(height: 18),
@@ -166,7 +156,7 @@ class DashboardPage extends ConsumerWidget {
                   title: 'Penanda Ayat',
                   subtitle: bookmarks.isEmpty
                       ? 'Belum ada penanda tersimpan'
-                      : '${bookmarks.length} penanda tersimpan',
+                      : 'Penanda terakhir & Lanjutkan Bacaan',
                   onTap: onOpenBookmarks,
                 ),
               ],
@@ -336,16 +326,9 @@ class _HijriCalendarCard extends StatelessWidget {
 }
 
 class _ContinueReadingCard extends StatelessWidget {
-  const _ContinueReadingCard({
-    required this.progress,
-    required this.onTap,
-    this.fromBookmark = false,
-  });
+  const _ContinueReadingCard({required this.progress, required this.onTap});
 
   final ReadingProgress? progress;
-
-  /// Whether the shown position comes from the primary bookmark.
-  final bool fromBookmark;
   final VoidCallback onTap;
 
   @override
@@ -389,8 +372,7 @@ class _ContinueReadingCard extends StatelessWidget {
               Text(
                 current == null
                     ? 'Buka surah pertama untuk memulai perjalanan Anda.'
-                    : '${fromBookmark ? 'Penanda utama • ' : ''}'
-                          'Ayat ${current.ayahNumber} • '
+                    : 'Ayat ${current.ayahNumber} • '
                           '${current.percent}% Al-Qur\'an',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,

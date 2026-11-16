@@ -9,7 +9,7 @@ import '../../domain/entities/bookmark.dart';
 import '../../domain/entities/mushaf.dart';
 import '../../domain/entities/surah.dart';
 import '../providers/bookmark_providers.dart';
-import 'bookmark_color_sheet.dart';
+import 'bookmark_sheet.dart';
 import 'quran_text.dart';
 
 class MushafPageWidget extends StatelessWidget {
@@ -268,7 +268,7 @@ class _SurahHeading extends StatelessWidget {
 ///
 /// Every verse is its own tappable [TextSpan] so the reader can tap an ayah
 /// directly, without leaving the mushaf, to open its bookmark action sheet.
-/// Bookmarked verses get a soft tinted background in their category colour.
+/// The saved verse gets a soft tinted background.
 class _AyahFlow extends ConsumerStatefulWidget {
   const _AyahFlow({
     required this.ayahs,
@@ -304,7 +304,7 @@ class _AyahFlowState extends ConsumerState<_AyahFlow> {
     final existing = ref.read(
       bookmarkAtProvider((surah: ayah.surahNumber, verse: ayah.number)),
     );
-    showBookmarkColorSheet(
+    showBookmarkSheet(
       context,
       surah: surah,
       ayah: ayah,
@@ -324,24 +324,28 @@ class _AyahFlowState extends ConsumerState<_AyahFlow> {
   @override
   Widget build(BuildContext context) {
     final bookmarks = ref.watch(bookmarksProvider).value ?? const <Bookmark>[];
-    final colorsByVerse = <int, BookmarkColor>{
+    final savedVerses = <int>{
       for (final bookmark in bookmarks)
         if (widget.ayahs.isNotEmpty &&
             bookmark.surahNumber == widget.ayahs.first.surahNumber)
-          bookmark.verseNumber: bookmark.color,
+          bookmark.verseNumber,
     };
 
     final spans = <InlineSpan>[];
     for (final ayah in widget.ayahs) {
-      final color = colorsByVerse[ayah.number];
+      final isSaved = savedVerses.contains(ayah.number);
       spans.add(
         TextSpan(
           text: '${ayah.arabicFor(widget.style)}\u00A0',
           recognizer: _recognizerFor(ayah),
           mouseCursor: SystemMouseCursors.click,
-          style: color == null
-              ? null
-              : TextStyle(backgroundColor: color.color.withValues(alpha: 0.16)),
+          style: isSaved
+              ? TextStyle(
+                  backgroundColor: widget.palette.accent.withValues(
+                    alpha: 0.16,
+                  ),
+                )
+              : null,
         ),
       );
       spans.add(
@@ -351,7 +355,7 @@ class _AyahFlowState extends ConsumerState<_AyahFlow> {
           mouseCursor: SystemMouseCursors.click,
           style: TextStyle(
             fontSize: widget.fontSize * 0.72,
-            color: color?.color ?? widget.palette.accent,
+            color: widget.palette.accent,
           ),
         ),
       );
