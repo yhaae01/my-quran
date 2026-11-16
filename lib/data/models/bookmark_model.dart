@@ -18,6 +18,7 @@ class BookmarkModel {
     this.translation,
     this.color,
     this.timestamp,
+    this.isContinueReading = false,
   });
 
   final String id;
@@ -28,6 +29,7 @@ class BookmarkModel {
   final String? translation;
   final BookmarkColor? color;
   final DateTime? timestamp;
+  final bool isContinueReading;
 
   factory BookmarkModel.fromEntity(Bookmark bookmark) {
     return BookmarkModel(
@@ -39,6 +41,7 @@ class BookmarkModel {
       translation: bookmark.translation,
       color: bookmark.color,
       timestamp: bookmark.timestamp,
+      isContinueReading: bookmark.isContinueReading,
     );
   }
 
@@ -62,6 +65,7 @@ class BookmarkModel {
       translation: translation ?? '',
       color: color ?? BookmarkColor.green,
       timestamp: savedAt,
+      isContinueReading: isContinueReading,
     );
   }
 }
@@ -86,6 +90,18 @@ class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
           color: BookmarkColor.fromName(reader.readString()),
           timestamp: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
         );
+      case 2:
+        return BookmarkModel(
+          id: reader.readString(),
+          surahName: reader.readString(),
+          surahNumber: reader.readInt(),
+          verseNumber: reader.readInt(),
+          arabicText: reader.readString(),
+          translation: reader.readString(),
+          color: BookmarkColor.fromName(reader.readString()),
+          timestamp: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+          isContinueReading: reader.readBool(),
+        );
       default:
         throw HiveError('Versi data penanda tidak dikenal: $version');
     }
@@ -94,7 +110,7 @@ class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
   @override
   void write(BinaryWriter writer, BookmarkModel obj) {
     writer
-      ..writeByte(1)
+      ..writeByte(2)
       ..writeString(obj.id)
       ..writeString(obj.surahName ?? '')
       ..writeInt(obj.surahNumber ?? 0)
@@ -105,6 +121,7 @@ class BookmarkModelAdapter extends TypeAdapter<BookmarkModel> {
       ..writeInt(
         (obj.timestamp ?? DateTime.fromMillisecondsSinceEpoch(0))
             .millisecondsSinceEpoch,
-      );
+      )
+      ..writeBool(obj.isContinueReading);
   }
 }

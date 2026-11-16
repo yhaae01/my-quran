@@ -29,6 +29,7 @@ class Bookmark {
     required this.translation,
     required this.color,
     required this.timestamp,
+    this.isContinueReading = false,
   });
 
   final String id;
@@ -39,6 +40,12 @@ class Bookmark {
   final String translation;
   final BookmarkColor color;
   final DateTime timestamp;
+
+  /// The single primary bookmark used by the "Lanjutkan Bacaan" card and synced
+  /// to the group challenge. At most one bookmark carries this flag; every
+  /// other bookmark is a secondary personal reference that never writes
+  /// reading progress.
+  final bool isContinueReading;
 
   String get reference => '$displaySurahName • Ayat $verseNumber';
 
@@ -73,6 +80,7 @@ class Bookmark {
     String? translation,
     BookmarkColor? color,
     DateTime? timestamp,
+    bool? isContinueReading,
   }) {
     return Bookmark(
       id: id ?? this.id,
@@ -83,6 +91,7 @@ class Bookmark {
       translation: translation ?? this.translation,
       color: color ?? this.color,
       timestamp: timestamp ?? this.timestamp,
+      isContinueReading: isContinueReading ?? this.isContinueReading,
     );
   }
 }

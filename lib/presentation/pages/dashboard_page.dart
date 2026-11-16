@@ -35,6 +35,17 @@ class DashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final progress = ref.watch(readingProgressProvider);
+    final pinned = ref.watch(continueReadingBookmarkProvider);
+    // A designated primary bookmark overrides the active reading position for
+    // "Lanjutkan Bacaan"; secondary bookmarks never do.
+    final resume = pinned == null
+        ? progress
+        : ReadingProgress(
+            surahNumber: pinned.surahNumber,
+            ayahNumber: pinned.verseNumber,
+            surahName: pinned.displaySurahName,
+            updatedAt: pinned.timestamp,
+          );
     final bookmarks = ref.watch(bookmarksProvider).value ?? const <Bookmark>[];
     final now = DateTime.now();
 
@@ -83,8 +94,9 @@ class DashboardPage extends ConsumerWidget {
           _HijriCalendarCard(now: now),
           const SizedBox(height: 14),
           _ContinueReadingCard(
-            progress: progress,
-            onTap: () => _openReader(context, ref, progress),
+            progress: resume,
+            fromBookmark: pinned != null,
+            onTap: () => _openReader(context, ref, resume),
           ),
           const SizedBox(height: 18),
           IntrinsicHeight(
@@ -324,9 +336,16 @@ class _HijriCalendarCard extends StatelessWidget {
 }
 
 class _ContinueReadingCard extends StatelessWidget {
-  const _ContinueReadingCard({required this.progress, required this.onTap});
+  const _ContinueReadingCard({
+    required this.progress,
+    required this.onTap,
+    this.fromBookmark = false,
+  });
 
   final ReadingProgress? progress;
+
+  /// Whether the shown position comes from the primary bookmark.
+  final bool fromBookmark;
   final VoidCallback onTap;
 
   @override
@@ -370,7 +389,8 @@ class _ContinueReadingCard extends StatelessWidget {
               Text(
                 current == null
                     ? 'Buka surah pertama untuk memulai perjalanan Anda.'
-                    : 'Ayat ${current.ayahNumber} • '
+                    : '${fromBookmark ? 'Penanda utama • ' : ''}'
+                          'Ayat ${current.ayahNumber} • '
                           '${current.percent}% Al-Qur\'an',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,

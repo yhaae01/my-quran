@@ -246,6 +246,38 @@ class _ColorTag extends StatelessWidget {
   }
 }
 
+class _PrimaryTag extends StatelessWidget {
+  const _PrimaryTag();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(7, 3, 10, 3),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.bookmark_added, size: 12, color: scheme.primary),
+          const SizedBox(width: 5),
+          Text(
+            'Lanjutkan Bacaan',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BookmarkCard extends ConsumerWidget {
   const _BookmarkCard({required this.bookmark});
 
@@ -258,6 +290,8 @@ class _BookmarkCard extends ConsumerWidget {
     final style = ref.watch(
       settingsProvider.select((settings) => settings.mushafStyle),
     );
+    final pinned = ref.watch(continueReadingBookmarkProvider);
+    final isPrimary = pinned?.id == bookmark.id;
     final arabic = bookmark.arabicSnippet;
     final translation = bookmark.translation.trim();
 
@@ -310,6 +344,26 @@ class _BookmarkCard extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        PopupMenuButton<String>(
+                          tooltip: 'Opsi lanjutkan bacaan',
+                          icon: Icon(
+                            Icons.more_vert,
+                            size: 20,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                          itemBuilder: (_) => [
+                            PopupMenuItem(
+                              value: 'continue',
+                              child: Text(
+                                isPrimary
+                                    ? 'Batalkan lanjutkan bacaan'
+                                    : 'Jadikan Lanjutkan Bacaan',
+                              ),
+                            ),
+                          ],
+                          onSelected: (_) =>
+                              _toggleContinueReading(context, ref, isPrimary),
+                        ),
                         IconButton(
                           tooltip: 'Hapus penanda',
                           visualDensity: VisualDensity.compact,
@@ -327,6 +381,10 @@ class _BookmarkCard extends ConsumerWidget {
                       child: Row(
                         children: [
                           _ColorTag(color: bookmark.color),
+                          if (isPrimary) ...[
+                            const SizedBox(width: 6),
+                            const _PrimaryTag(),
+                          ],
                           const Spacer(),
                           Icon(
                             Icons.schedule,
@@ -426,6 +484,34 @@ class _BookmarkCard extends ConsumerWidget {
         reportInitialAyah: false,
       ),
     );
+  }
+
+  /// Promotes this bookmark to the single "Lanjutkan Bacaan" reference, which
+  /// also pushes its verse to the group challenge, or releases it again.
+  Future<void> _toggleContinueReading(
+    BuildContext context,
+    WidgetRef ref,
+    bool isPrimary,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(bookmarksProvider.notifier);
+    if (isPrimary) {
+      await notifier.clearContinueReading();
+    } else {
+      await notifier.setContinueReading(bookmark);
+    }
+    if (!messenger.mounted) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            isPrimary
+                ? 'Penanda utama dilepas. Progres mengikuti bacaan terakhir.'
+                : '${bookmark.title} dijadikan Lanjutkan Bacaan.',
+          ),
+        ),
+      );
   }
 
   Future<void> _remove(BuildContext context, WidgetRef ref) async {

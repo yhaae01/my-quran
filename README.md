@@ -110,9 +110,9 @@
 ### 4. Informative Color-Coded Bookmarks
 - **Four Categorization Emblems**: Mark verses with **Red, Green, Yellow, or Blue** ribbon badges. The gradient emblem replaces plain colour dots in the picker, filter chips, group headers, ayah tiles and saved cards.
 - **Informative Cards**: Every card shows the surah name and ayah number (e.g. "Surah Al-Baqarah - Ayat 255"), the category emblem, a two-line Arabic snippet with its translation, and the date/time it was saved.
-- **Jump & Delete**: Tap a card to jump straight to the exact ayah, or use the delete button on the card (swipe-to-delete with Undo is also supported).
+- **Jump & Delete**: Tap a card, then choose **Mode per Ayat** or **Mode Mushaf** to open that ayah; the delete button on the card removes it (swipe-to-delete with Undo is also supported).
 - **Filtering**: Filter by category; counts per category are shown in the filter bar.
-- **Independent From Challenges**: Bookmarks live in their own local store and never write reading progress. Opening a bookmark also skips the initial progress report, so personal references cannot move the real-time challenge leaderboard.
+- **One Primary "Lanjutkan Bacaan"**: Any bookmark can be promoted with **Jadikan Lanjutkan Bacaan**; promoting a second one demotes the first, so exactly one primary bookmark drives the dashboard resume card and the group challenge. Saving, opening or deleting secondary bookmarks never writes reading progress, and opening one skips the initial progress report, so personal references cannot move the real-time challenge leaderboard. Reading past the primary position releases the flag automatically.
 - **Resilient Local Storage**: Backed by Hive with a custom binary adapter. Missing fields are repaired with readable fallbacks and unreadable records are skipped so a damaged entry can never crash the list.
 
 ### 5. Dark & Light Theme
