@@ -16,8 +16,8 @@ class DeviceLocationDataSource {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw const Failure(
-        'Layanan lokasi perangkat belum aktif. Aktifkan GPS atau pilih kota '
-        'secara manual.',
+        'Layanan lokasi perangkat belum aktif. Aktifkan GPS atau pilih '
+        'wilayah secara manual.',
       );
     }
 
@@ -28,15 +28,15 @@ class DeviceLocationDataSource {
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       throw const Failure(
-        'Izin lokasi ditolak. Pilih kota secara manual untuk menghitung waktu '
-        'shalat.',
+        'Izin lokasi ditolak. Pilih wilayah secara manual untuk menghitung '
+        'waktu shalat.',
       );
     }
 
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: LocationSettings(
-          accuracy: LocationAccuracy.low,
+          accuracy: LocationAccuracy.medium,
           timeLimit: _timeout,
         ),
       );
@@ -51,7 +51,7 @@ class DeviceLocationDataSource {
       debugPrint('Gagal membaca lokasi: $error');
       throw const Failure(
         'Lokasi tidak bisa dibaca. Pastikan GPS aktif lalu coba lagi, atau '
-        'pilih kota secara manual.',
+        'pilih wilayah secara manual.',
       );
     }
   }

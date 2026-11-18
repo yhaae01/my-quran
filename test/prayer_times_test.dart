@@ -216,6 +216,38 @@ void main() {
       expect(automatic.isPrayerEnabled(Prayer.fajr), isTrue);
     });
 
+    test('prefers a selected kecamatan over the legacy city', () {
+      const preferences = PrayerPreferences(
+        cityId: 'bandung',
+        regionId: '3202210',
+        regionLabel: 'Kec. Cibadak, Kabupaten Sukabumi',
+        regionLatitude: -6.895,
+        regionLongitude: 106.77,
+        regionTimeZoneId: 'Asia/Jakarta',
+      );
+
+      expect(preferences.hasRegion, isTrue);
+      expect(preferences.resolvedLatitude, -6.895);
+      expect(preferences.resolvedLongitude, 106.77);
+      expect(
+        preferences.resolvedLocationLabel,
+        'Kec. Cibadak, Kabupaten Sukabumi',
+      );
+
+      final automatic = preferences.copyWith(
+        locationMode: PrayerLocationMode.automatic,
+        latitude: -7.1,
+        longitude: 107.4,
+        timeZoneId: 'Asia/Jakarta',
+        locationLabel: 'Kec. Ciwidey, Kabupaten Bandung (GPS)',
+      );
+      expect(automatic.resolvedLatitude, -7.1);
+      expect(
+        automatic.resolvedLocationLabel,
+        'Kec. Ciwidey, Kabupaten Bandung (GPS)',
+      );
+    });
+
     test('disabled reminder list is preserved', () {
       const preferences = PrayerPreferences(
         notificationsEnabled: false,
@@ -271,6 +303,28 @@ void main() {
       final reloaded = SettingsRepositoryImpl(box).load().prayer;
       expect(reloaded, preferences);
       expect(reloaded.enabledPrayers, preferences.enabledPrayers);
+    });
+
+    test('round-trips a kecamatan and desa selection', () async {
+      const preferences = PrayerPreferences(
+        locationMode: PrayerLocationMode.city,
+        cityId: 'bandung',
+        regionId: '3204010',
+        villageId: '3204010002',
+        regionLabel: 'Desa/Kel. Ciwidey, Kec. Ciwidey',
+        regionLatitude: -7.089,
+        regionLongitude: 107.444,
+        regionTimeZoneId: 'Asia/Jakarta',
+      );
+
+      await SettingsRepositoryImpl(box)
+          .save(const AppSettings(prayer: preferences));
+
+      final reloaded = SettingsRepositoryImpl(box).load().prayer;
+      expect(reloaded, preferences);
+      expect(reloaded.regionId, '3204010');
+      expect(reloaded.villageId, '3204010002');
+      expect(reloaded.resolvedLatitude, -7.089);
     });
 
     test('keeps an explicitly empty prayer selection', () async {

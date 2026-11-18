@@ -28,6 +28,8 @@ abstract final class HiveBoxes {
 abstract final class AppAssets {
   static const String mushafPageIndex = 'assets/data/mushaf_page_index.json';
   static const String hadiths = 'assets/data/hadiths.json';
+  static const String indonesiaRegions = 'assets/data/indonesia_regions.json';
+  static const String indonesiaVillageDirectory = 'assets/data/wilayah';
 }
 
 abstract final class CacheTtl {

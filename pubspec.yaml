@@ -77,6 +77,8 @@ flutter:
   assets:
     - assets/data/mushaf_page_index.json
     - assets/data/hadiths.json
+    - assets/data/indonesia_regions.json
+    - assets/data/wilayah/
 
   fonts:
     - family: AmiriQuran

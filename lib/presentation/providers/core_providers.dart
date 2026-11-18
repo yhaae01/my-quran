@@ -11,6 +11,7 @@ import '../../data/datasources/adhan_prayer_times_data_source.dart';
 import '../../data/datasources/challenge_remote_data_source.dart';
 import '../../data/datasources/device_location_data_source.dart';
 import '../../data/datasources/firebase_auth_data_source.dart';
+import '../../data/datasources/indonesia_region_local_data_source.dart';
 import '../../data/datasources/prayer_notification_data_source.dart';
 import '../../data/datasources/prayer_widget_data_source.dart';
 import '../../data/datasources/quran_local_data_source.dart';
@@ -27,6 +28,7 @@ import '../../data/repositories/prayer_reminder_repository_impl.dart';
 import '../../data/repositories/prayer_times_repository_impl.dart';
 import '../../data/repositories/prayer_widget_repository_impl.dart';
 import '../../data/repositories/quran_repository_impl.dart';
+import '../../data/repositories/region_repository_impl.dart';
 import '../../data/repositories/reading_progress_repository_impl.dart';
 import '../../data/repositories/settings_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -39,6 +41,7 @@ import '../../domain/repositories/prayer_times_repository.dart';
 import '../../domain/repositories/prayer_widget_repository.dart';
 import '../../domain/repositories/quran_repository.dart';
 import '../../domain/repositories/reading_progress_repository.dart';
+import '../../domain/repositories/region_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/usecases/auth_usecases.dart';
 import '../../domain/usecases/bookmark_usecases.dart';
@@ -167,6 +170,18 @@ final Provider<LocationRepository> locationRepositoryProvider =
     Provider<LocationRepository>(
       (ref) =>
           LocationRepositoryImpl(ref.watch(deviceLocationDataSourceProvider)),
+    );
+
+final Provider<IndonesiaRegionLocalDataSource>
+indonesiaRegionLocalDataSourceProvider = Provider(
+  (ref) => IndonesiaRegionLocalDataSource(rootBundle),
+);
+
+final Provider<RegionRepository> regionRepositoryProvider =
+    Provider<RegionRepository>(
+      (ref) => RegionRepositoryImpl(
+        ref.watch(indonesiaRegionLocalDataSourceProvider),
+      ),
     );
 
 final Provider<PrayerNotificationDataSource>

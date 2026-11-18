@@ -25,6 +25,12 @@ class SettingsRepositoryImpl implements SettingsRepository {
   static const String _prayerLongitudeKey = 'prayer_longitude';
   static const String _prayerTimeZoneKey = 'prayer_timezone_id';
   static const String _prayerLabelKey = 'prayer_location_label';
+  static const String _prayerRegionIdKey = 'prayer_region_id';
+  static const String _prayerVillageIdKey = 'prayer_village_id';
+  static const String _prayerRegionLabelKey = 'prayer_region_label';
+  static const String _prayerRegionLatitudeKey = 'prayer_region_latitude';
+  static const String _prayerRegionLongitudeKey = 'prayer_region_longitude';
+  static const String _prayerRegionTimeZoneKey = 'prayer_region_timezone_id';
   static const String _reciterIdKey = 'reciter_id';
 
   @override
@@ -41,6 +47,12 @@ class SettingsRepositoryImpl implements SettingsRepository {
     final storedLongitude = _box.get(_prayerLongitudeKey);
     final storedTimeZone = _box.get(_prayerTimeZoneKey);
     final storedLabel = _box.get(_prayerLabelKey);
+    final storedRegionId = _box.get(_prayerRegionIdKey);
+    final storedVillageId = _box.get(_prayerVillageIdKey);
+    final storedRegionLabel = _box.get(_prayerRegionLabelKey);
+    final storedRegionLatitude = _box.get(_prayerRegionLatitudeKey);
+    final storedRegionLongitude = _box.get(_prayerRegionLongitudeKey);
+    final storedRegionTimeZone = _box.get(_prayerRegionTimeZoneKey);
     final storedReciter = _box.get(_reciterIdKey);
 
     final fontSize = storedSize is num
@@ -77,6 +89,18 @@ class SettingsRepositoryImpl implements SettingsRepository {
         longitude: storedLongitude is num ? storedLongitude.toDouble() : null,
         timeZoneId: storedTimeZone is String ? storedTimeZone : null,
         locationLabel: storedLabel is String ? storedLabel : null,
+        regionId: storedRegionId is String ? storedRegionId : null,
+        villageId: storedVillageId is String ? storedVillageId : null,
+        regionLabel: storedRegionLabel is String ? storedRegionLabel : null,
+        regionLatitude: storedRegionLatitude is num
+            ? storedRegionLatitude.toDouble()
+            : null,
+        regionLongitude: storedRegionLongitude is num
+            ? storedRegionLongitude.toDouble()
+            : null,
+        regionTimeZoneId: storedRegionTimeZone is String
+            ? storedRegionTimeZone
+            : null,
       ),
       reciterId: Reciter.fromId(storedReciter is String ? storedReciter : null)
           .id,
@@ -120,5 +144,11 @@ class SettingsRepositoryImpl implements SettingsRepository {
     await _box.put(_prayerLongitudeKey, prayer.longitude);
     await _box.put(_prayerTimeZoneKey, prayer.timeZoneId);
     await _box.put(_prayerLabelKey, prayer.locationLabel);
+    await _box.put(_prayerRegionIdKey, prayer.regionId);
+    await _box.put(_prayerVillageIdKey, prayer.villageId);
+    await _box.put(_prayerRegionLabelKey, prayer.regionLabel);
+    await _box.put(_prayerRegionLatitudeKey, prayer.regionLatitude);
+    await _box.put(_prayerRegionLongitudeKey, prayer.regionLongitude);
+    await _box.put(_prayerRegionTimeZoneKey, prayer.regionTimeZoneId);
   }
 }

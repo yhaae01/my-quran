@@ -7,7 +7,9 @@ import '../../domain/entities/prayer.dart';
 /// Calculates a week of prayer times with the Indonesian (Kemenag) method.
 ///
 /// Kemenag uses a Fajr angle of 20°, an Isha angle of 18°, the Shafi'i madhab
-/// and a two-minute ihtiyati (safety margin) for every prayer.
+/// and a two-minute ihtiyati (safety margin) for every prayer. The angles are
+/// set explicitly instead of trusting a preset, because the calculation now
+/// runs for arbitrary kecamatan/desa coordinates rather than major cities.
 class AdhanPrayerTimesDataSource {
   AdhanPrayerTimesDataSource() {
     tz_data.initializeTimeZones();
@@ -68,7 +70,11 @@ class AdhanPrayerTimesDataSource {
   }
 
   adhan.CalculationParameters _parameters() {
+    // The Singapore preset shares Kemenag's 20°/18° angles; both are set here
+    // so a dependency update cannot silently change the Indonesian standard.
     final parameters = adhan.CalculationMethod.singapore.getParameters();
+    parameters.fajrAngle = 20;
+    parameters.ishaAngle = 18;
     parameters.madhab = adhan.Madhab.shafi;
     parameters.adjustments
       ..fajr = _ihtiyatiMinutes

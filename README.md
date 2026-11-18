@@ -131,8 +131,9 @@
 ### 7. Prayer Times, Adhan Notifications & Home Widgets
 - **Astronomical Calculation Engine**: Integrated with `adhan` calculation library using the official Indonesian Ministry of Religious Affairs (Kemenag) method (Fajr 20°, Isha 18°).
 - **Location Modes**:
-  - **GPS Auto-Detection**: Real-time geolocation using `geolocator`.
-  - **Preset Cities**: 35+ major Indonesian cities across WIB, WITA, and WIT timezones.
+  - **GPS Auto-Detection**: Real-time geolocation using `geolocator`, labeled with the nearest kecamatan and its WIB/WITA/WIT timezone.
+  - **Province → Kabupaten/Kota → Kecamatan → Desa/Kelurahan**: The complete bundled administrative hierarchy (34 provinces, 514 regencies, 7,215 kecamatan, 80,252 villages) with coordinates at every level, searchable by kecamatan, regency, or province name.
+  - **Coordinate-Based Calculation**: Prayer times are computed from the selected village/kecamatan or GPS coordinate, so rural areas no longer snap to a distant major city. The calculation runs fully offline.
 - **7-Day Rolling Schedule**: Computes Subuh, Dzuhur, Ashar, Maghrib, and Isya timings with countdown timers.
 - **Timely Notifications**: Scheduled local alerts with custom Islamic notification channels and wake-up alarms (`flutter_local_notifications`).
 - **Home Screen Widgets (`home_widget`)**:

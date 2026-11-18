@@ -6,8 +6,8 @@ import '../../domain/entities/app_settings.dart';
 import '../../domain/entities/detected_location.dart';
 import '../../domain/entities/mushaf.dart';
 import '../../domain/entities/prayer.dart';
-import '../../domain/entities/prayer_city.dart';
 import '../../domain/entities/prayer_preferences.dart';
+import '../../domain/entities/prayer_region.dart';
 import '../../domain/entities/reciter.dart';
 import 'core_providers.dart';
 
@@ -72,17 +72,26 @@ class SettingsNotifier extends Notifier<AppSettings> {
     );
   }
 
-  void setPrayerCity(String cityId) {
-    final city = prayerCityById(cityId);
-    if (city.id == state.prayer.cityId &&
-        state.prayer.locationMode == PrayerLocationMode.city) {
+  /// Selects a kecamatan or desa/kelurahan and uses its coordinates for the
+  /// calculation, so rural locations no longer fall back to a nearby city.
+  void setPrayerRegion(PrayerRegionMatch match) {
+    final prayer = state.prayer;
+    if (prayer.regionId == match.id &&
+        prayer.villageId == match.villageId &&
+        prayer.locationMode == PrayerLocationMode.city) {
       return;
     }
     _update(
       state.copyWith(
-        prayer: state.prayer.copyWith(
-          cityId: city.id,
+        prayer: prayer.copyWith(
           locationMode: PrayerLocationMode.city,
+          regionId: match.id,
+          villageId: match.villageId,
+          clearVillage: match.villageId == null,
+          regionLabel: match.label,
+          regionLatitude: match.latitude,
+          regionLongitude: match.longitude,
+          regionTimeZoneId: match.timeZoneId,
         ),
       ),
     );

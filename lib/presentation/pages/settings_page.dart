@@ -216,6 +216,15 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 const Divider(),
                 const ListTile(
+                  leading: Icon(Icons.public),
+                  title: Text('Data wilayah Indonesia'),
+                  subtitle: Text(
+                    '34 provinsi · 514 kabupaten/kota · 7.215 kecamatan · '
+                    '80.252 desa/kelurahan (Open Admin Data, BPS/Kemendagri)',
+                  ),
+                ),
+                const Divider(),
+                const ListTile(
                   leading: Icon(Icons.offline_bolt_outlined),
                   title: Text('Penyimpanan lokal'),
                   subtitle: Text('Hive — penanda & cache bacaan offline'),
