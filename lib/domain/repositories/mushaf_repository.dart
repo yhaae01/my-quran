@@ -8,4 +8,11 @@ abstract interface class MushafRepository {
     required int surah,
     required int ayah,
   });
+
+  /// Juz that contains the given verse in the requested mushaf layout.
+  Future<int> juzForVerse(
+    MushafStyle style, {
+    required int surah,
+    required int ayah,
+  });
 }

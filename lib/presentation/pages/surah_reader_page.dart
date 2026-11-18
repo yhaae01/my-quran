@@ -98,12 +98,10 @@ class SurahReaderPage extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (detail != null)
-                        Text(
-                          '${detail.surah.verseCount} ayat • '
-                          '${detail.surah.revelation}',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        _SurahInfoLine(
+                          surah: detail.surah,
+                          mushafStyle: style,
+                          compact: true,
                         ),
                     ],
                   ),
@@ -326,6 +324,38 @@ class _AyahListState extends State<_AyahList> {
   }
 }
 
+/// "7 ayat • Juz 1" (or "Juz 1–3" for a surah that spans several juz),
+/// shared by the reader app bar and the surah header card.
+class _SurahInfoLine extends ConsumerWidget {
+  const _SurahInfoLine({
+    required this.surah,
+    required this.mushafStyle,
+    this.compact = false,
+  });
+
+  final Surah surah;
+  final MushafStyle mushafStyle;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final juzLabel = ref
+        .watch(surahJuzRangesProvider(mushafStyle))
+        .value?[surah.number];
+    return Text(
+      juzLabel == null
+          ? '${surah.verseCount} ayat'
+          : '${surah.verseCount} ayat • $juzLabel',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: compact ? TextAlign.start : TextAlign.center,
+      style: (compact ? theme.textTheme.labelSmall : theme.textTheme.bodySmall)
+          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+    );
+  }
+}
+
 class _SurahHeader extends StatelessWidget {
   const _SurahHeader({required this.surah, required this.style});
 
@@ -368,13 +398,7 @@ class _SurahHeader extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
-          Text(
-            '${surah.meaning} • ${surah.revelation} • ${surah.verseCount} ayat',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          _SurahInfoLine(surah: surah, mushafStyle: style),
           if (showBasmalah) ...[
             const SizedBox(height: 16),
             Divider(

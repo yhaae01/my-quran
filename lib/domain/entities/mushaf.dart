@@ -120,6 +120,10 @@ class MushafPageIndex {
     return result + 1;
   }
 
+  /// Juz containing the verse, taken from the page that holds its first
+  /// occurrence. Juz boundaries in both bundled mushafs start on a page.
+  int juzForVerse(int surah, int ayah) => startOf(pageOf(surah, ayah)).juz;
+
   MushafPageRange rangeOf(int pageNumber) {
     final start = startOf(pageNumber);
     final next = pageNumber < pageCount ? startOf(pageNumber + 1) : null;

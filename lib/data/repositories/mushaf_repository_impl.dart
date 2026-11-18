@@ -74,6 +74,16 @@ class MushafRepositoryImpl implements MushafRepository {
     return index.pageOf(surah, ayah);
   }
 
+  @override
+  Future<int> juzForVerse(
+    MushafStyle style, {
+    required int surah,
+    required int ayah,
+  }) async {
+    final index = await _indexFor(style);
+    return index.juzForVerse(surah, ayah);
+  }
+
   Future<MushafPageIndex> _indexFor(MushafStyle style) async {
     final cached = _indices[style];
     if (cached != null) return cached;

@@ -54,6 +54,24 @@ void main() {
       expect(boundaryIndex.startOf(1).juz, 1);
     });
 
+    test('resolves the juz that contains a verse', () {
+      const juzIndex = MushafPageIndex(
+        style: MushafStyle.madinah,
+        starts: [
+          PageStart(surah: 1, ayah: 1, juz: 1),
+          PageStart(surah: 2, ayah: 1, juz: 1),
+          PageStart(surah: 2, ayah: 142, juz: 2),
+          PageStart(surah: 2, ayah: 253, juz: 3),
+        ],
+      );
+
+      expect(juzIndex.juzForVerse(1, 7), 1);
+      expect(juzIndex.juzForVerse(2, 141), 1);
+      expect(juzIndex.juzForVerse(2, 142), 2);
+      expect(juzIndex.juzForVerse(2, 252), 2);
+      expect(juzIndex.juzForVerse(2, 253), 3);
+    });
+
     test('parses a style from the bundled asset shape', () {
       final parsed = MushafPageIndex.fromJson(const {
         'styles': {

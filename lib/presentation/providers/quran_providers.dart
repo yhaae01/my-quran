@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/mushaf.dart';
+import '../../domain/entities/reading_progress.dart';
 import '../../domain/entities/surah.dart';
 import 'core_providers.dart';
 
@@ -53,3 +54,30 @@ final mushafPageProvider = FutureProvider.family<MushafPage, MushafPageQuery>((
 ) {
   return ref.watch(getMushafPageProvider)(query.style, query.page);
 });
+
+/// Juz label for every surah in one mushaf layout.
+///
+/// "Juz 1" for a surah inside one juz, "Juz 1–3" when it spans several. The
+/// whole map is loaded once and shared by the surah list and reader header.
+final surahJuzRangesProvider =
+    FutureProvider.family<Map<int, String>, MushafStyle>((ref, style) async {
+      final repository = ref.watch(mushafRepositoryProvider);
+      final ranges = <int, String>{};
+      for (var surah = 1; surah <= surahVerseCounts.length; surah++) {
+        final verseCount = surahVerseCounts[surah - 1];
+        final first = await repository.juzForVerse(
+          style,
+          surah: surah,
+          ayah: 1,
+        );
+        final last = verseCount <= 1
+            ? first
+            : await repository.juzForVerse(
+                style,
+                surah: surah,
+                ayah: verseCount,
+              );
+        ranges[surah] = first == last ? 'Juz $first' : 'Juz $first–$last';
+      }
+      return ranges;
+    });

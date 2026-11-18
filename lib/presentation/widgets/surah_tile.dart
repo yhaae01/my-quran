@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/surah.dart';
+import '../providers/quran_providers.dart';
+import '../providers/settings_providers.dart';
 
-class SurahTile extends StatelessWidget {
+class SurahTile extends ConsumerWidget {
   const SurahTile({super.key, required this.surah, required this.onTap});
 
   final Surah surah;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final style = ref.watch(
+      settingsProvider.select((settings) => settings.mushafStyle),
+    );
+    final juzLabel = ref
+        .watch(surahJuzRangesProvider(style))
+        .value?[surah.number];
 
     return Card(
       child: InkWell(
@@ -41,7 +50,9 @@ class SurahTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      surah.revelation,
+                      juzLabel == null
+                          ? surah.revelation
+                          : '${surah.revelation} • $juzLabel',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,
