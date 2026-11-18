@@ -1,3 +1,4 @@
+import '../entities/daily_tilawah.dart';
 import '../entities/member_progress.dart';
 import '../entities/reading_group.dart';
 import '../entities/reading_progress.dart';
@@ -17,8 +18,9 @@ abstract interface class ChallengeRepository {
   /// Members of [groupId] ordered by verses read, highest first.
   Stream<List<MemberProgress>> watchMembers(String groupId);
 
-  /// Pushes local progress to every group of the signed-in user.
-  Future<void> syncProgress(ReadingProgress progress);
+  /// Pushes local progress and today's 1D1J status to every group of the
+  /// signed-in user.
+  Future<void> syncProgress(ReadingProgress progress, {DailyTilawah? daily});
 
   Future<void> leaveGroup(String groupId);
 

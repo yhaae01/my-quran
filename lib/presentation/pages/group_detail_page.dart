@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/text_utils.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/member_progress.dart';
 import '../../domain/entities/reading_group.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../providers/auth_providers.dart';
 import '../providers/challenge_providers.dart';
+import '../providers/daily_tilawah_providers.dart';
 import '../providers/reading_progress_providers.dart';
 import '../widgets/common_views.dart';
 import '../widgets/invite_code_card.dart';
@@ -234,6 +236,8 @@ class _MyProgressCardState extends ConsumerState<_MyProgressCard> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final progress = ref.watch(readingProgressProvider);
+    final daily = ref.watch(dailyTilawahProvider);
+    final dailyComplete = daily.isCompleteFor(progress);
 
     return Card(
       child: Padding(
@@ -270,6 +274,30 @@ class _MyProgressCardState extends ConsumerState<_MyProgressCard> {
                 minHeight: 8,
                 backgroundColor: scheme.surfaceContainerHighest,
               ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(
+                  dailyComplete
+                      ? Icons.check_circle_rounded
+                      : Icons.menu_book_outlined,
+                  size: 16,
+                  color: dailyComplete ? scheme.secondary : scheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '1D1J hari ini: '
+                    '${formatPageCount(daily.pagesRead(progress))}/'
+                    '${daily.targetPages} halaman'
+                    '${dailyComplete ? ' • selesai' : ''}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Row(
@@ -404,6 +432,35 @@ class _MemberProgressTile extends StatelessWidget {
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
+                  if (member.hasDailyTargetToday) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          member.dailyCompleted
+                              ? Icons.check_circle_rounded
+                              : Icons.menu_book_outlined,
+                          size: 13,
+                          color: member.dailyCompleted
+                              ? scheme.secondary
+                              : scheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          member.dailyCompleted
+                              ? '1D1J selesai hari ini'
+                              : '1D1J ${formatPageCount(member.dailyPages)}/'
+                                    '${member.dailyTargetPages} hlm',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: member.dailyCompleted
+                                ? scheme.secondary
+                                : scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),

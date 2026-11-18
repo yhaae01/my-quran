@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/error/failure.dart';
 import '../../core/utils/invite_code.dart';
+import '../../domain/entities/daily_tilawah.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../models/member_progress_model.dart';
 import '../models/reading_group_model.dart';
@@ -26,6 +27,7 @@ class ChallengeRemoteDataSource {
   Map<String, Object?> _memberFields({
     required String displayName,
     ReadingProgress? progress,
+    DailyTilawah? daily,
   }) {
     final value =
         progress ??
@@ -42,6 +44,12 @@ class ChallengeRemoteDataSource {
       'ayahNumber': value.ayahNumber,
       'versesRead': value.versesRead,
       'updatedAt': FieldValue.serverTimestamp(),
+      if (daily != null) ...{
+        'dailyDate': daily.dateKey,
+        'dailyPages': daily.pagesRead(value),
+        'dailyTargetPages': daily.targetPages,
+        'dailyCompleted': daily.isCompleteFor(value),
+      },
     };
   }
 
@@ -186,6 +194,7 @@ class ChallengeRemoteDataSource {
     required String uid,
     required String displayName,
     required ReadingProgress progress,
+    DailyTilawah? daily,
   }) async {
     final snapshot = await _groups
         .where('memberUids', arrayContains: uid)
@@ -196,7 +205,11 @@ class ChallengeRemoteDataSource {
     for (final group in snapshot.docs) {
       batch.set(
         group.reference.collection(membersCollection).doc(uid),
-        _memberFields(displayName: displayName, progress: progress),
+        _memberFields(
+          displayName: displayName,
+          progress: progress,
+          daily: daily,
+        ),
         SetOptions(merge: true),
       );
     }

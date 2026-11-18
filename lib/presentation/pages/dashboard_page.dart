@@ -9,6 +9,7 @@ import '../providers/bookmark_providers.dart';
 import '../providers/core_providers.dart';
 import '../providers/reading_progress_providers.dart';
 import '../providers/settings_providers.dart';
+import '../widgets/daily_tilawah_card.dart';
 import '../widgets/reading_mode_sheet.dart';
 import 'challenge_page.dart';
 import 'hijri_calendar_page.dart';
@@ -87,6 +88,10 @@ class DashboardPage extends ConsumerWidget {
           _ContinueReadingCard(
             progress: resume,
             onTap: () => _openReader(context, ref, resume),
+          ),
+          const SizedBox(height: 14),
+          DailyTilawahCard(
+            onOpenReader: () => _openReader(context, ref, resume),
           ),
           const SizedBox(height: 18),
           IntrinsicHeight(

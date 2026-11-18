@@ -85,6 +85,7 @@
 
 ### 1. Dashboard & Immersive Reading
 - **Dashboard-First Workflow**: The **Beranda** tab opens with a Hijri calendar card (Umm al-Qura) beside the Gregorian date, then a continue-reading card with Qur'an completion percentage, two primary reading modes (Baca per Ayat and Mushaf), and shortcuts to prayer times, group challenges and bookmarks. Settings is reachable from the dashboard app bar.
+- **1D1J Daily Target**: A **1 Hari 1 Juz** card sits directly below Lanjutkan Bacaan, showing today's 20-page target, live percentage and a progress bar. Progress follows the actual reading position, can be topped up by one page, or marked complete; completion is pushed automatically to every joined reading group. Tapping the card opens the active target in Ayah or Mushaf mode.
 - **Clean Five-Tab Navigation**: Beranda, Surah, Mushaf, Shalat and Penanda — fewer tabs and no duplicated settings destination.
 - **Safe Exit**: A double back press leaves the app. The first press shows "Tekan sekali lagi untuk keluar aplikasi" and the app only closes if the second press follows within 2 seconds.
 - **Landscape Layout**: In landscape the bottom bar is replaced by a slim `NavigationRail`, freeing vertical space for reading.
@@ -126,6 +127,7 @@
   - Create groups with auto-generated, collision-free 6-character invite codes (ambiguous characters like `0`, `O`, `1`, `I` excluded).
   - Join via invite code with real-time membership validation in Firestore transactions.
 - **Live Leaderboard**: Real-time Firestore stream tracks each member's furthest read verse out of 6,236 verses, displaying progress percentage, current surah/ayah, and rank.
+- **Shared 1D1J Status**: Each member document also carries today's 1D1J pages and completion, so the leaderboard shows who has finished their daily juz.
 - **Debounced Sync**: Automatically stores progress locally on page turns and synchronizes to the cloud with a 2-second debounce to minimize battery and network usage.
 
 ### 7. Prayer Times, Adhan Notifications & Home Widgets

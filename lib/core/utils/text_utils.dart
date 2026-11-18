@@ -11,6 +11,15 @@ const List<String> _arabicDigits = [
   '٩',
 ];
 
+/// Formats a page amount for Indonesian copy: 7 -> "7", 7.25 -> "7,3".
+String formatPageCount(double value) {
+  final rounded = (value * 10).round() / 10;
+  final text = rounded == rounded.roundToDouble()
+      ? rounded.toStringAsFixed(0)
+      : rounded.toStringAsFixed(1);
+  return text.replaceAll('.', ',');
+}
+
 /// Converts 255 to ٢٥٥ for ayah/page markers.
 String toArabicDigits(int value) {
   final buffer = StringBuffer();

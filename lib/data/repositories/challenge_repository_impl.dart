@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/error/failure.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/entities/daily_tilawah.dart';
 import '../../domain/entities/member_progress.dart';
 import '../../domain/entities/reading_group.dart';
 import '../../domain/entities/reading_progress.dart';
@@ -75,13 +76,17 @@ class ChallengeRepositoryImpl implements ChallengeRepository {
   }
 
   @override
-  Future<void> syncProgress(ReadingProgress progress) async {
+  Future<void> syncProgress(
+    ReadingProgress progress, {
+    DailyTilawah? daily,
+  }) async {
     final user = _requireUser();
     await _guard(
       () => _remote.syncProgress(
         uid: user.uid,
         displayName: user.displayName,
         progress: progress,
+        daily: daily,
       ),
     );
   }

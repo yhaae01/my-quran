@@ -1,3 +1,4 @@
+import '../entities/daily_tilawah.dart';
 import '../entities/member_progress.dart';
 import '../entities/reading_group.dart';
 import '../entities/reading_progress.dart';
@@ -49,8 +50,8 @@ class SyncReadingProgress {
 
   final ChallengeRepository _repository;
 
-  Future<void> call(ReadingProgress progress) =>
-      _repository.syncProgress(progress);
+  Future<void> call(ReadingProgress progress, {DailyTilawah? daily}) =>
+      _repository.syncProgress(progress, daily: daily);
 }
 
 class LeaveReadingGroup {

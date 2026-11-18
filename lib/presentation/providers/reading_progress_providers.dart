@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/reading_progress.dart';
 import 'auth_providers.dart';
 import 'core_providers.dart';
+import 'daily_tilawah_providers.dart';
 
 /// Furthest position reached on this device. Kept locally and mirrored to every
 /// reading group the signed-in reader has joined.
@@ -75,7 +76,10 @@ class ReadingProgressNotifier extends Notifier<ReadingProgress?> {
     if (progress == null) return;
     _syncTimer?.cancel();
     _pending = null;
-    await ref.read(syncReadingProgressProvider)(progress);
+    await ref.read(syncReadingProgressProvider)(
+      progress,
+      daily: ref.read(dailyTilawahProvider),
+    );
   }
 
   Future<void> _flush() async {
@@ -85,7 +89,10 @@ class ReadingProgressNotifier extends Notifier<ReadingProgress?> {
     if (!ref.read(firebaseReadyProvider)) return;
     if (ref.read(currentUserProvider) == null) return;
     try {
-      await ref.read(syncReadingProgressProvider)(pending);
+      await ref.read(syncReadingProgressProvider)(
+        pending,
+        daily: ref.read(dailyTilawahProvider),
+      );
     } catch (_) {
       // Offline or signed out mid-write: the local position stays authoritative
       // and is retried on the next page or through the manual sync button.

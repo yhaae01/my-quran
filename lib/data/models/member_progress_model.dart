@@ -13,6 +13,10 @@ class MemberProgressModel {
     required this.ayahNumber,
     required this.versesRead,
     required this.updatedAt,
+    this.dailyPages = 0,
+    this.dailyTargetPages = 20,
+    this.dailyCompleted = false,
+    this.dailyDate,
   });
 
   final String uid;
@@ -22,6 +26,10 @@ class MemberProgressModel {
   final int ayahNumber;
   final int versesRead;
   final DateTime? updatedAt;
+  final double dailyPages;
+  final int dailyTargetPages;
+  final bool dailyCompleted;
+  final String? dailyDate;
 
   factory MemberProgressModel.fromMap(String uid, Map<String, dynamic> data) {
     final updated = data['updatedAt'];
@@ -33,6 +41,10 @@ class MemberProgressModel {
       ayahNumber: (data['ayahNumber'] as num?)?.toInt() ?? 1,
       versesRead: (data['versesRead'] as num?)?.toInt() ?? 0,
       updatedAt: updated is Timestamp ? updated.toDate() : null,
+      dailyPages: (data['dailyPages'] as num?)?.toDouble() ?? 0,
+      dailyTargetPages: (data['dailyTargetPages'] as num?)?.toInt() ?? 20,
+      dailyCompleted: data['dailyCompleted'] as bool? ?? false,
+      dailyDate: data['dailyDate'] as String?,
     );
   }
 
@@ -52,6 +64,10 @@ class MemberProgressModel {
         surahName: surahName,
         updatedAt: updatedAt ?? DateTime.now(),
       ),
+      dailyPages: dailyPages,
+      dailyTargetPages: dailyTargetPages,
+      dailyCompleted: dailyCompleted,
+      dailyDate: dailyDate,
     );
   }
 }
