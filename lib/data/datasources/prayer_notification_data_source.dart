@@ -89,7 +89,7 @@ class PrayerNotificationDataSource {
     tz_data.initializeTimeZones();
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('ic_stat_adhan'),
+        android: AndroidInitializationSettings('ic_stat_logo'),
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
           requestBadgePermission: false,
@@ -97,6 +97,13 @@ class PrayerNotificationDataSource {
         ),
       ),
     );
+    // Android caches a channel's icon once it has been created, so remove the
+    // legacy channel and let the v2 channel be created with the app logo.
+    try {
+      await _android?.deleteNotificationChannel(channelId: 'prayer_times');
+    } catch (_) {
+      // Channel may not exist yet.
+    }
     _initialized = true;
   }
 
@@ -118,7 +125,7 @@ class PrayerNotificationDataSource {
 
   static const NotificationDetails _details = NotificationDetails(
     android: AndroidNotificationDetails(
-      'prayer_times',
+      'prayer_times_v2',
       'Waktu Shalat',
       channelDescription: 'Pengingat saat waktu shalat tiba',
       importance: Importance.max,
@@ -126,7 +133,7 @@ class PrayerNotificationDataSource {
       category: AndroidNotificationCategory.reminder,
       enableVibration: true,
       playSound: true,
-      icon: 'ic_stat_adhan',
+      icon: 'ic_stat_logo',
     ),
     iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
   );

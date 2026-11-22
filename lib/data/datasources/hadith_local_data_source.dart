@@ -14,6 +14,11 @@ class HadithLocalDataSource {
   final Box<dynamic>? box;
 
   static const String _cacheKey = 'cached_hadiths';
+  static const String _cacheVersionKey = 'cached_hadiths_version';
+
+  /// Bumped whenever the bundled dataset changes so older, smaller caches are
+  /// replaced instead of hiding the expanded offline collection.
+  static const int _cacheVersion = 2;
 
   /// Loads hadiths from Hive cache if available, falling back to the bundled
   /// offline JSON asset from renomureza/hadis-api-id dataset.
@@ -21,7 +26,8 @@ class HadithLocalDataSource {
     // 1. Try loading from Hive cache first
     try {
       final cached = box?.get(_cacheKey);
-      if (cached != null) {
+      final cacheVersion = box?.get(_cacheVersionKey);
+      if (cached != null && cacheVersion == _cacheVersion) {
         final List<dynamic> rawList = cached is String
             ? jsonDecode(cached) as List<dynamic>
             : (cached as List<dynamic>);
@@ -60,6 +66,7 @@ class HadithLocalDataSource {
             .map((h) => HadithModel.fromEntity(h).toJson())
             .toList();
         await box!.put(_cacheKey, listMaps);
+        await box!.put(_cacheVersionKey, _cacheVersion);
       }
     } catch (_) {
       // Ignored if box is unavailable

@@ -5,6 +5,7 @@ class Hadith {
     required this.arabic,
     required this.translation,
     this.slug,
+    this.rawi,
   });
 
   final String book;
@@ -12,6 +13,9 @@ class Hadith {
   final int number;
   final String arabic;
   final String translation;
+
+  /// Narrator (rawi) of the hadith, when the source records one.
+  final String? rawi;
 
   /// Human-friendly title / citation reference.
   /// E.g. "HR. Shahih Bukhari No. 1" or "HR. Bukhari No. 1"
@@ -29,6 +33,7 @@ class Hadith {
     int? number,
     String? arabic,
     String? translation,
+    String? rawi,
   }) {
     return Hadith(
       book: book ?? this.book,
@@ -36,6 +41,7 @@ class Hadith {
       number: number ?? this.number,
       arabic: arabic ?? this.arabic,
       translation: translation ?? this.translation,
+      rawi: rawi ?? this.rawi,
     );
   }
 
@@ -47,9 +53,10 @@ class Hadith {
             book == other.book &&
             number == other.number &&
             arabic == other.arabic &&
-            translation == other.translation;
+            translation == other.translation &&
+            rawi == other.rawi;
   }
 
   @override
-  int get hashCode => Object.hash(book, number, arabic, translation);
+  int get hashCode => Object.hash(book, number, arabic, translation, rawi);
 }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  flutter_local_notifications resolves the adhan reminder icon by name at
-  runtime (getIdentifier("ic_stat_adhan", "drawable", packageName)). Because
+  flutter_local_notifications resolves the notification icon by name at
+  runtime (getIdentifier("ic_stat_logo", "drawable", packageName)). Because
   no Java/XML resource references it, the release resource shrinker strips it
   and notifications fail with a missing-resource error. Keep it explicitly.
 -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_stat_adhan" />
+    tools:keep="@drawable/ic_stat_logo" />

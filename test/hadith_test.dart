@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:my_quran/core/constants/app_constants.dart';
 import 'package:my_quran/data/datasources/hadith_local_data_source.dart';
 import 'package:my_quran/data/datasources/hadith_notification_data_source.dart';
 import 'package:my_quran/data/models/hadith_model.dart';
@@ -57,12 +60,56 @@ class FakeNotificationsPlugin extends Fake
   @override
   Future<void> cancel({required int id, String? tag}) async {
     cancelled.add(id);
+    scheduled.removeWhere((item) => item['id'] == id);
+  }
+
+  @override
+  Future<List<PendingNotificationRequest>> pendingNotificationRequests() async {
+    return scheduled
+        .map(
+          (item) => PendingNotificationRequest(
+            item['id'] as int,
+            item['title'] as String?,
+            item['body'] as String?,
+            item['payload'] as String?,
+          ),
+        )
+        .toList();
   }
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUpAll(() {
     tz_data.initializeTimeZones();
+  });
+
+  group('Bundled offline hadith dataset', () {
+    test('is broad, multilingual, and includes narrators', () async {
+      final raw = await rootBundle.loadString(AppAssets.hadiths);
+      final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+
+      expect(list.length, greaterThanOrEqualTo(500));
+      final books = list
+          .map((item) => item['slug'])
+          .whereType<String>()
+          .toSet();
+      expect(books.length, greaterThanOrEqualTo(8));
+
+      final withRawi = list.where(
+        (item) => (item['rawi'] as String?)?.isNotEmpty ?? false,
+      );
+      expect(withRawi.length, greaterThanOrEqualTo(500));
+
+      for (final item in list) {
+        final hadith = HadithModel.fromJson(item).toEntity();
+        expect(hadith.book, isNotEmpty);
+        expect(hadith.number, greaterThan(0));
+        expect(hadith.arabic, isNotEmpty);
+        expect(hadith.translation, isNotEmpty);
+      }
+    });
   });
 
   group('Hadith Entity & Model (renomureza/hadis-api-id schema)', () {
@@ -71,6 +118,7 @@ void main() {
         'book': 'Shahih Bukhari',
         'slug': 'bukhari',
         'number': 1,
+        'rawi': 'Umar bin Al Khaththab',
         'arab': 'إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ',
         'id': 'Semua perbuatan tergantung niatnya.',
       };
@@ -81,6 +129,7 @@ void main() {
       expect(model.number, 1);
       expect(model.arab, 'إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ');
       expect(model.id, 'Semua perbuatan tergantung niatnya.');
+      expect(model.rawi, 'Umar bin Al Khaththab');
 
       final entity = model.toEntity();
       expect(entity.book, 'Shahih Bukhari');
@@ -88,6 +137,7 @@ void main() {
       expect(entity.arabic, 'إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ');
       expect(entity.translation, 'Semua perbuatan tergantung niatnya.');
       expect(entity.reference, 'HR. Shahih Bukhari No. 1');
+      expect(entity.rawi, 'Umar bin Al Khaththab');
     });
 
     test('serializes back to JSON and toEntity preserves all properties', () {
@@ -107,6 +157,7 @@ void main() {
       expect(json['number'], 2699);
       expect(json['arab'], contains('طَرِيقًا'));
       expect(json['id'], contains('mencari ilmu'));
+      expect(json.containsKey('rawi'), isFalse);
     });
   });
 
@@ -159,16 +210,16 @@ void main() {
         Hive.init(tempDir.path);
         final box = await Hive.openBox<dynamic>('test_hadiths');
 
-        await box.put('cached_hadiths', [
-          {
-            'book': 'Shahih Bukhari',
-            'number': 13,
-            'arab': 'لاَ يُؤْمِنُ أَحَدُكُمْ',
-            'id': 'Tidak beriman salah seorang di antara kalian...',
-          },
+        final dataSource = HadithLocalDataSource(box: box);
+        await dataSource.cacheHadiths(const [
+          Hadith(
+            book: 'Shahih Bukhari',
+            number: 13,
+            arabic: 'لاَ يُؤْمِنُ أَحَدُكُمْ',
+            translation: 'Tidak beriman salah seorang di antara kalian...',
+          ),
         ]);
 
-        final dataSource = HadithLocalDataSource(box: box);
         final repo = HadithRepositoryImpl(dataSource);
 
         final hadith = await repo.getRandomHadith(Random(1));
@@ -254,7 +305,7 @@ void main() {
       );
 
       final firstNotification = fakePlugin.scheduled.first;
-      expect(firstNotification['id'], HadithNotificationDataSource.idBase);
+      expect(firstNotification['id'], HadithNotificationDataSource.dailyId);
       expect(firstNotification['title'], 'Hadis Hari Ini');
       expect(
         firstNotification['body'],
@@ -267,9 +318,76 @@ void main() {
       final scheduledDate = firstNotification['scheduledDate'] as tz.TZDateTime;
       expect(scheduledDate.hour, 5);
       expect(scheduledDate.minute, 0);
+      // No daily-repeat component: the rolling one-shots must not stack.
+      expect(firstNotification['matchDateTimeComponents'], isNull);
       expect(
-        firstNotification['matchDateTimeComponents'],
-        DateTimeComponents.time,
+        fakePlugin.cancelled,
+        contains(HadithNotificationDataSource.dailyId),
+      );
+    });
+
+    test(
+      'rescheduling the same morning does not stack duplicate alarms',
+      () async {
+        final hadiths = [
+          const Hadith(
+            book: 'Shahih Bukhari',
+            number: 1,
+            arabic: 'إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ',
+            translation: 'Semua perbuatan tergantung niatnya.',
+          ),
+        ];
+        final fromTime = DateTime.utc(2026, 11, 15, 12, 0);
+
+        await notificationDataSource.scheduleDailyHadiths(
+          hadiths: hadiths,
+          timeZoneId: 'Asia/Jakarta',
+          fromDate: fromTime,
+          random: Random(42),
+        );
+        await notificationDataSource.scheduleDailyHadiths(
+          hadiths: hadiths,
+          timeZoneId: 'Asia/Jakarta',
+          fromDate: fromTime,
+          random: Random(42),
+        );
+
+        expect(
+          fakePlugin.scheduled,
+          hasLength(HadithNotificationDataSource.daysAhead),
+        );
+      },
+    );
+
+    test('a fresh app session reuses the pending OS schedules', () async {
+      final hadiths = [
+        const Hadith(
+          book: 'Shahih Bukhari',
+          number: 1,
+          arabic: 'إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ',
+          translation: 'Semua perbuatan tergantung niatnya.',
+        ),
+      ];
+      final fromTime = DateTime.utc(2026, 11, 15, 12, 0);
+
+      await notificationDataSource.scheduleDailyHadiths(
+        hadiths: hadiths,
+        timeZoneId: 'Asia/Jakarta',
+        fromDate: fromTime,
+        random: Random(42),
+      );
+
+      final reopenedDataSource = HadithNotificationDataSource(fakePlugin);
+      await reopenedDataSource.scheduleDailyHadiths(
+        hadiths: hadiths,
+        timeZoneId: 'Asia/Jakarta',
+        fromDate: fromTime,
+        random: Random(42),
+      );
+
+      expect(
+        fakePlugin.scheduled,
+        hasLength(HadithNotificationDataSource.daysAhead),
       );
     });
   });

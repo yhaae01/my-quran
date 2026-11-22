@@ -9,6 +9,11 @@ import '../../domain/entities/hadith.dart';
 import '../../domain/repositories/hadith_repository.dart';
 
 /// Schedules and manages the daily 05:00 AM Hadith notification.
+///
+/// Every morning gets its own fixed notification slot starting at
+/// [dailyId] (500), and slots are always cancelled before being scheduled
+/// again. This keeps the schedule idempotent: opening the app repeatedly
+/// replaces the same alarms instead of stacking duplicate 05:00 alarms.
 class HadithNotificationDataSource {
   HadithNotificationDataSource([FlutterLocalNotificationsPlugin? plugin])
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
@@ -16,8 +21,18 @@ class HadithNotificationDataSource {
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
 
-  static const int idBase = 5000;
+  /// Fixed ID of the next 05:00 AM Hadith notification. The following
+  /// mornings use [dailyId] + 1 ... [dailyId] + [daysAhead] - 1.
+  static const int dailyId = 500;
   static const int daysAhead = 7;
+
+  /// IDs used by releases that scheduled a repeating alarm plus six
+  /// one-shots. Those produced two notifications at 05:00 and are cleaned up
+  /// so upgraded installs start from a clean slate.
+  static const int _legacyIdBase = 5000;
+  static const int _legacyIdCount = 10;
+
+  tz.TZDateTime? _scheduledFor;
 
   /// Calculates the next occurrence of 05:00 AM in the given [location].
   /// If the current time is before 05:00 AM, returns today at 05:00 AM.
@@ -32,14 +47,19 @@ class HadithNotificationDataSource {
       5, // 05:00 AM
       0,
     );
-    if (scheduled.isBefore(now)) {
+    if (!scheduled.isAfter(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
     return scheduled;
   }
 
-  /// Schedules daily 05:00 AM notifications for the upcoming [daysAhead] days,
-  /// assigning a randomly selected hadith from [hadiths] for each morning.
+  /// Schedules the daily 05:00 AM notifications for the upcoming
+  /// [daysAhead] mornings, assigning a randomly selected hadith from
+  /// [hadiths] to each morning.
+  ///
+  /// The call is guarded: if the same 05:00 AM target is already scheduled
+  /// (in this process or still pending in the OS), it returns without
+  /// registering another alarm.
   Future<void> scheduleDailyHadiths({
     required List<Hadith> hadiths,
     String? timeZoneId,
@@ -48,10 +68,21 @@ class HadithNotificationDataSource {
   }) async {
     if (kIsWeb || hadiths.isEmpty) return;
     await _ensureInitialized();
-    await cancelAll();
 
     final location = _resolveLocation(timeZoneId);
     final firstScheduled = nextInstanceOf5AM(location, fromDate);
+
+    // Fast path: this process already scheduled this exact morning.
+    if (_scheduledFor == firstScheduled) return;
+
+    final ids = List<int>.generate(daysAhead, (index) => dailyId + index);
+
+    // Slow path: the OS may still hold the rolling schedule from an earlier
+    // app session. Only re-register when a slot is actually missing.
+    if (await _hasAllPending(ids)) {
+      _scheduledFor = firstScheduled;
+      return;
+    }
 
     final android = _android;
     final canScheduleExact = android == null
@@ -63,27 +94,55 @@ class HadithNotificationDataSource {
 
     final rng = random ?? Random();
 
+    await _cancelLegacySchedules();
     for (var i = 0; i < daysAhead; i++) {
+      final id = dailyId + i;
       final scheduledDate = firstScheduled.add(Duration(days: i));
       final hadith = getRandomHadithFromList(hadiths, rng);
 
+      // Cancel the previous alarm with this ID right before scheduling so a
+      // repeated call can never leave two alarms for the same morning.
+      await _plugin.cancel(id: id);
       await _plugin.zonedSchedule(
-        id: idBase + i,
+        id: id,
         scheduledDate: scheduledDate,
         title: 'Hadis Hari Ini',
         body: hadith.translation,
         notificationDetails: _buildDetails(hadith),
         androidScheduleMode: mode,
-        matchDateTimeComponents: i == 0 ? DateTimeComponents.time : null,
+        // Deliberately no `matchDateTimeComponents`: a repeating alarm would
+        // fire alongside the next morning's one-shot notification, which was
+        // the cause of the duplicate 05:00 AM alerts.
         payload: 'hadith:${hadith.book}:${hadith.number}',
       );
     }
+    _scheduledFor = firstScheduled;
   }
 
   /// Cancels all scheduled Hadith notifications.
   Future<void> cancelAll() async {
     if (kIsWeb) return;
-    for (var id = idBase; id < idBase + daysAhead + 1; id++) {
+    for (var i = 0; i < daysAhead; i++) {
+      await _plugin.cancel(id: dailyId + i);
+    }
+    await _cancelLegacySchedules();
+    _scheduledFor = null;
+  }
+
+  Future<bool> _hasAllPending(List<int> ids) async {
+    try {
+      final pending = await _plugin.pendingNotificationRequests();
+      final pendingIds = pending.map((request) => request.id).toSet();
+      return ids.every(pendingIds.contains);
+    } catch (_) {
+      // Platforms without pending-request support simply reschedule; IDs and
+      // the pre-schedule cancel keep that safe.
+      return false;
+    }
+  }
+
+  Future<void> _cancelLegacySchedules() async {
+    for (var id = _legacyIdBase; id < _legacyIdBase + _legacyIdCount; id++) {
       await _plugin.cancel(id: id);
     }
   }
@@ -93,7 +152,7 @@ class HadithNotificationDataSource {
     tz_data.initializeTimeZones();
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('ic_stat_adhan'),
+        android: AndroidInitializationSettings('ic_stat_logo'),
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
           requestBadgePermission: false,
@@ -101,6 +160,13 @@ class HadithNotificationDataSource {
         ),
       ),
     );
+    // Channel appearance (including its small icon) is cached by Android after
+    // creation, so drop any channel created by an older release.
+    try {
+      await _android?.deleteNotificationChannel(channelId: 'daily_hadith');
+    } catch (_) {
+      // Channel may not exist yet.
+    }
     _initialized = true;
   }
 
@@ -114,9 +180,10 @@ class HadithNotificationDataSource {
   }
 
   NotificationDetails _buildDetails(Hadith hadith) {
+    final rawi = hadith.rawi;
     return NotificationDetails(
       android: AndroidNotificationDetails(
-        'daily_hadith',
+        'daily_hadith_v2',
         'Hadis Hari Ini',
         channelDescription:
             'Notifikasi hadis pilihan setiap hari pukul 05:00 pagi',
@@ -125,11 +192,13 @@ class HadithNotificationDataSource {
         category: AndroidNotificationCategory.reminder,
         enableVibration: true,
         playSound: true,
-        icon: 'ic_stat_adhan',
+        icon: 'ic_stat_logo',
         styleInformation: BigTextStyleInformation(
           hadith.translation,
           contentTitle: 'Hadis Hari Ini',
-          summaryText: hadith.reference,
+          summaryText: rawi == null || rawi.isEmpty
+              ? hadith.reference
+              : '${hadith.reference} • $rawi',
         ),
       ),
       iOS: const DarwinNotificationDetails(
