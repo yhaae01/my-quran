@@ -133,8 +133,10 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
                   Expanded(
                     child: PageView.builder(
                       controller: _controller,
-                      // A left swipe advances to the next mushaf page, following
-                      // the right-to-left reading order of the Qur'an.
+                      // Right-to-left progression: page 1 is anchored on the
+                      // right and later pages sit to its left, so the next page
+                      // always arrives from the left, as in a physical mushaf.
+                      reverse: true,
                       itemCount: mushafPageCount,
                       onPageChanged: (index) {
                         setState(() => _currentPage = index + 1);
@@ -211,8 +213,8 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
     if (target == _currentPage) return;
     _controller.animateToPage(
       target - 1,
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeInOutCubic,
     );
     setState(() => _currentPage = target);
   }
@@ -255,9 +257,13 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
   }
 }
 
-/// Turns the page that is being swiped away like a sheet lifted from its free
-/// edge, while the page underneath stays flat — the next page is revealed as
-/// the current one swings off.
+/// Turns the page that is being swiped away like a leaf of paper lifted from
+/// its free edge, while the page underneath stays flat — the next page is
+/// revealed as the current one swings off.
+///
+/// The hinge sits on the right edge and the free left edge lifts towards the
+/// reader, so the leaf turns from right to left, matching the right-to-left
+/// order in which a mushaf is read.
 ///
 /// The rotation is driven by the live scroll offset, so the animation follows
 /// the finger and keeps running through the settle animation without any extra
@@ -288,12 +294,13 @@ class _PageTurn extends StatelessWidget {
         // Only the page leaving the reader turns; the incoming page is already
         // lying flat underneath it.
         final turn = delta > 0 ? delta : 0.0;
+        final angle = _turnCurve(turn) * (math.pi / 2);
 
         return Transform(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.centerRight,
           transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.0015)
-            ..rotateY(-turn * math.pi / 2),
+            ..setEntry(3, 2, 0.0014)
+            ..rotateY(angle),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -302,10 +309,10 @@ class _PageTurn extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
                       colors: [
-                        Colors.black.withValues(alpha: 0.4 * turn),
+                        Colors.black.withValues(alpha: 0.45 * turn),
                         Colors.transparent,
                       ],
                     ),
@@ -317,6 +324,14 @@ class _PageTurn extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Keeps the leaf close to flat while a swipe starts so short, accidental
+  /// drags barely tilt it, then lets the last stretch swing through quickly —
+  /// the stiff-then-loose feel of real paper rather than a rigid panel.
+  static double _turnCurve(double turn) {
+    final t = turn.clamp(0.0, 1.0).toDouble();
+    return t * t * (3 - 2 * t);
   }
 }
 
