@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,6 +133,8 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
                   Expanded(
                     child: PageView.builder(
                       controller: _controller,
+                      // A left swipe advances to the next mushaf page, following
+                      // the right-to-left reading order of the Qur'an.
                       itemCount: mushafPageCount,
                       onPageChanged: (index) {
                         setState(() => _currentPage = index + 1);
@@ -144,17 +147,23 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
                         );
                         final pageAsync = ref.watch(mushafPageProvider(query));
 
-                        return pageAsync.when(
-                          data: (page) => MushafPageWidget(
-                            page: page,
-                            fontScale: fontScale,
-                          ),
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
-                          error: (error, _) => ErrorView(
-                            message: error.toString(),
-                            onRetry: () =>
-                                ref.invalidate(mushafPageProvider(query)),
+                        return _PageTurn(
+                          controller: _controller,
+                          index: index,
+                          child: pageAsync.when(
+                            data: (page) => MushafPageWidget(
+                              page: page,
+                              fontScale: fontScale,
+                            ),
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            error: (error, _) => ErrorView(
+                              message: error.toString(),
+                              onRetry: () => ref.invalidate(
+                                mushafPageProvider(query),
+                              ),
+                            ),
                           ),
                         );
                       },
@@ -243,6 +252,71 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
 
     if (!mounted || page == null) return;
     _goToPage(page);
+  }
+}
+
+/// Turns the page that is being swiped away like a sheet lifted from its free
+/// edge, while the page underneath stays flat — the next page is revealed as
+/// the current one swings off.
+///
+/// The rotation is driven by the live scroll offset, so the animation follows
+/// the finger and keeps running through the settle animation without any extra
+/// state or ticker per page.
+class _PageTurn extends StatelessWidget {
+  const _PageTurn({
+    required this.controller,
+    required this.index,
+    required this.child,
+  });
+
+  final PageController controller;
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      child: child,
+      builder: (context, child) {
+        final page =
+            controller.hasClients && controller.position.hasContentDimensions
+            ? controller.page
+            : null;
+        final delta = ((page ?? index.toDouble()) - index).clamp(-1.0, 1.0);
+
+        // Only the page leaving the reader turns; the incoming page is already
+        // lying flat underneath it.
+        final turn = delta > 0 ? delta : 0.0;
+
+        return Transform(
+          alignment: Alignment.centerLeft,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.0015)
+            ..rotateY(-turn * math.pi / 2),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              child!,
+              IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.4 * turn),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

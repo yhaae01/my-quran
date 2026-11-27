@@ -214,12 +214,40 @@ class DailyTilawahCard extends ConsumerWidget {
   }
 
   Future<void> _complete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await _confirmCompletion(context);
+    if (confirmed != true || !context.mounted) return;
+
     try {
       await ref.read(dailyTilawahProvider.notifier).markCompleted();
     } catch (error) {
       if (!context.mounted) return;
       _showSyncMessage(context, 'Target ditandai selesai, tetapi ', error);
     }
+  }
+
+  /// Completion feeds the shared group progress, so it is only recorded after
+  /// the reader confirms they really finished today's juz.
+  Future<bool?> _confirmCompletion(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Selesaikan target 1D1J?'),
+        content: const Text(
+          'Apakah Anda yakin sudah menyelesaikan target 1 juz hari ini? '
+          'Progres ngaji bareng akan diperbarui setelah Anda konfirmasi.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Ya, selesai'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSyncMessage(BuildContext context, String prefix, Object error) {
