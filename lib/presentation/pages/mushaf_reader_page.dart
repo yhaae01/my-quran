@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +12,7 @@ import '../widgets/common_views.dart';
 import '../widgets/immersive_reader.dart';
 import '../widgets/mushaf_page_widget.dart';
 import '../widgets/mushaf_style_sheet.dart';
+import '../widgets/page_fold_pager.dart';
 
 class MushafReaderPage extends ConsumerStatefulWidget {
   const MushafReaderPage({super.key, this.initialPage = 1});
@@ -24,14 +24,13 @@ class MushafReaderPage extends ConsumerStatefulWidget {
 }
 
 class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
-  late final PageController _controller;
+  final _pager = PageFoldPagerController();
   late int _currentPage;
 
   @override
   void initState() {
     super.initState();
     _currentPage = widget.initialPage.clamp(1, mushafPageCount).toInt();
-    _controller = PageController(initialPage: _currentPage - 1);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_recordProgress(_currentPage));
     });
@@ -69,12 +68,6 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final style = ref.watch(
@@ -84,6 +77,12 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
       settingsProvider.select((settings) => settings.arabicFontSize),
     );
     final fontScale = fontSize / AppSettings.defaultArabicFontSize;
+
+    final pages = <int, Widget>{
+      for (var page = _currentPage - 1; page <= _currentPage + 1; page++)
+        if (page >= 1 && page <= mushafPageCount)
+          page - 1: _buildPage(page, style, fontScale),
+    };
 
     return ImmersiveReader(
       builder: (context, immersive, toggleImmersive) => Scaffold(
@@ -131,43 +130,17 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
               child: Column(
                 children: [
                   Expanded(
-                    child: PageView.builder(
-                      controller: _controller,
-                      // Right-to-left progression: page 1 is anchored on the
-                      // right and later pages sit to its left, so the next page
-                      // always arrives from the left, as in a physical mushaf.
-                      reverse: true,
-                      itemCount: mushafPageCount,
+                    child: PageFoldPager(
+                      controller: _pager,
+                      pageCount: mushafPageCount,
+                      initialPage: _currentPage - 1,
+                      // Build the neighbours up front so the peek and the fold
+                      // never wait on a provider read halfway through a drag.
+                      pageBuilder: (index) =>
+                          pages[index] ?? const SizedBox.shrink(),
                       onPageChanged: (index) {
                         setState(() => _currentPage = index + 1);
                         unawaited(_recordProgress(index + 1));
-                      },
-                      itemBuilder: (context, index) {
-                        final query = MushafPageQuery(
-                          style: style,
-                          page: index + 1,
-                        );
-                        final pageAsync = ref.watch(mushafPageProvider(query));
-
-                        return _PageTurn(
-                          controller: _controller,
-                          index: index,
-                          child: pageAsync.when(
-                            data: (page) => MushafPageWidget(
-                              page: page,
-                              fontScale: fontScale,
-                            ),
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            error: (error, _) => ErrorView(
-                              message: error.toString(),
-                              onRetry: () => ref.invalidate(
-                                mushafPageProvider(query),
-                              ),
-                            ),
-                          ),
-                        );
                       },
                     ),
                   ),
@@ -208,15 +181,30 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
     );
   }
 
+  /// Renders one mushaf page, resolving the style page asynchronously.
+  Widget _buildPage(int pageNumber, MushafStyle style, double fontScale) {
+    final query = MushafPageQuery(style: style, page: pageNumber);
+    final pageAsync = ref.watch(mushafPageProvider(query));
+
+    return pageAsync.when(
+      data: (page) => MushafPageWidget(page: page, fontScale: fontScale),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => ErrorView(
+        message: error.toString(),
+        onRetry: () => ref.invalidate(mushafPageProvider(query)),
+      ),
+    );
+  }
+
   void _goToPage(int page) {
     final target = page.clamp(1, mushafPageCount).toInt();
     if (target == _currentPage) return;
-    _controller.animateToPage(
-      target - 1,
-      duration: const Duration(milliseconds: 340),
-      curve: Curves.easeInOutCubic,
-    );
-    setState(() => _currentPage = target);
+    final index = target - 1;
+    if ((target - _currentPage).abs() == 1) {
+      _pager.animateToPage(index);
+    } else {
+      _pager.jumpToPage(index);
+    }
   }
 
   Future<void> _showJumpDialog() async {
@@ -254,84 +242,6 @@ class _MushafReaderPageState extends ConsumerState<MushafReaderPage> {
 
     if (!mounted || page == null) return;
     _goToPage(page);
-  }
-}
-
-/// Turns the page that is being swiped away like a leaf of paper lifted from
-/// its free edge, while the page underneath stays flat — the next page is
-/// revealed as the current one swings off.
-///
-/// The hinge sits on the right edge and the free left edge lifts towards the
-/// reader, so the leaf turns from right to left, matching the right-to-left
-/// order in which a mushaf is read.
-///
-/// The rotation is driven by the live scroll offset, so the animation follows
-/// the finger and keeps running through the settle animation without any extra
-/// state or ticker per page.
-class _PageTurn extends StatelessWidget {
-  const _PageTurn({
-    required this.controller,
-    required this.index,
-    required this.child,
-  });
-
-  final PageController controller;
-  final int index;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      child: child,
-      builder: (context, child) {
-        final page =
-            controller.hasClients && controller.position.hasContentDimensions
-            ? controller.page
-            : null;
-        final delta = ((page ?? index.toDouble()) - index).clamp(-1.0, 1.0);
-
-        // Only the page leaving the reader turns; the incoming page is already
-        // lying flat underneath it.
-        final turn = delta > 0 ? delta : 0.0;
-        final angle = _turnCurve(turn) * (math.pi / 2);
-
-        return Transform(
-          alignment: Alignment.centerRight,
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.0014)
-            ..rotateY(angle),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              child!,
-              IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerRight,
-                      end: Alignment.centerLeft,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.45 * turn),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  /// Keeps the leaf close to flat while a swipe starts so short, accidental
-  /// drags barely tilt it, then lets the last stretch swing through quickly —
-  /// the stiff-then-loose feel of real paper rather than a rigid panel.
-  static double _turnCurve(double turn) {
-    final t = turn.clamp(0.0, 1.0).toDouble();
-    return t * t * (3 - 2 * t);
   }
 }
 
